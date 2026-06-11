@@ -17,6 +17,7 @@ class MenuPageService
             'school-add',
             'menu-add',
             'dashboard',
+            'super-dashboard',
         ],
         PageMenu::SCOPE_SCHOOL => [
             'dashboard',

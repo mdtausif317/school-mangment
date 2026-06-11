@@ -10,7 +10,7 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        return view('super-admin.dashboard');
+        return view('super-admin.super-dashboard');
     }
 
     public function schoolView(): View
