@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
 
 class AccessMenuService
 {
+    public function __construct(
+        protected MenuPageService $menuPages
+    ) {}
+
     public function getParentMenus(?int $schoolId = null): Collection
     {
         return $this->menuQuery($schoolId)
@@ -233,7 +237,7 @@ class AccessMenuService
             }
         }
 
-        return null;
+        return $prefix.$normalized;
     }
 
     public function resolveMenuDefaults(array $data, ?PageMenu $existing = null): array
@@ -253,8 +257,7 @@ class AccessMenuService
         $data['scope'] = $data['scope'] ?? PageMenu::SCOPE_PLATFORM;
 
         if (! empty($data['slug'])) {
-            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope'])
-                ?? ($existing?->route_name);
+            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
         }
 
         return $data;
@@ -300,6 +303,8 @@ class AccessMenuService
             $this->addUserPageAccess($schoolId, $menu->id, $creator->id);
         }
 
+        $this->menuPages->syncMenu($menu);
+
         return $menu;
     }
 
@@ -328,6 +333,9 @@ class AccessMenuService
             throw new \InvalidArgumentException('Cannot move a menu under its own child.');
         }
 
+        $oldSlug = $menu->slug;
+        $oldScope = $menu->scope;
+
         $menu->update([
             'parent_id' => $parentId,
             'title' => $data['title'],
@@ -338,7 +346,10 @@ class AccessMenuService
             'display' => (bool) ($data['display_in_menu'] ?? false),
         ]);
 
-        return $menu->fresh();
+        $menu = $menu->fresh();
+        $this->menuPages->syncMenu($menu, $oldSlug, $oldScope);
+
+        return $menu;
     }
 
     public function reorderMenus(?int $schoolId, array $items): void

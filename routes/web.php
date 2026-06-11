@@ -53,3 +53,5 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
         ->middleware('page_access:dashboard')
         ->name('dashboard');
 });
+
+require __DIR__.'/menus.php';

@@ -33,6 +33,7 @@
                         <li><strong>Slug</strong> — unique ID (auto from title)</li>
                         <li><strong>Parent</strong> — optional, to group menus together</li>
                         <li>Page link is set <strong>automatically</strong> — no need to choose route</li>
+                        <li>A <code>.blade.php</code> file is created in <code>resources/views/</code> automatically</li>
                     </ul>
                 </div>
                 <form id="create_new_page">
