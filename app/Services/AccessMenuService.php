@@ -242,34 +242,31 @@ class AccessMenuService
 
     public function resolveMenuDefaults(array $data, ?PageMenu $existing = null): array
     {
+        if (! empty($data['page_folder'])) {
+            $data['scope'] = $data['page_folder'] === 'school'
+                ? PageMenu::SCOPE_SCHOOL
+                : PageMenu::SCOPE_PLATFORM;
+        }
+
         if (! empty($data['parent_id'])) {
             $parent = PageMenu::query()->find($data['parent_id']);
 
             if ($parent) {
                 $data['scope'] = $parent->scope;
             }
-        } elseif (! empty($data['slug'])) {
-            $data['scope'] = $this->inferScopeFromSlug($data['slug']);
-        } elseif ($existing) {
-            $data['scope'] = $existing->scope;
+        } elseif (empty($data['scope'])) {
+            if ($existing) {
+                $data['scope'] = $existing->scope;
+            } else {
+                $data['scope'] = PageMenu::SCOPE_PLATFORM;
+            }
         }
-
-        $data['scope'] = $data['scope'] ?? PageMenu::SCOPE_PLATFORM;
 
         if (! empty($data['slug'])) {
             $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
         }
 
         return $data;
-    }
-
-    protected function inferScopeFromSlug(string $slug): string
-    {
-        $schoolSlugs = ['dashboard', 'students', 'teachers', 'attendance', 'fees', 'reports', 'classes'];
-
-        return in_array(Str::slug($slug), $schoolSlugs, true)
-            ? PageMenu::SCOPE_SCHOOL
-            : PageMenu::SCOPE_PLATFORM;
     }
 
     public function addMenu(?int $schoolId, User $creator, array $data): PageMenu
@@ -448,6 +445,68 @@ class AccessMenuService
             ->all();
     }
 
+    public function syncDesignationMenuAccess(int $schoolId, int $designationId, array $menuIds): void
+    {
+        PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->where('designation_id', $designationId)
+            ->delete();
+
+        foreach (array_unique(array_map('intval', $menuIds)) as $menuId) {
+            if ($menuId > 0) {
+                PageAuth::create([
+                    'school_id' => $schoolId,
+                    'menu_id' => $menuId,
+                    'designation_id' => $designationId,
+                ]);
+            }
+        }
+    }
+
+    public function syncUserMenuAccess(int $schoolId, int $userId, array $menuIds): void
+    {
+        PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->where('user_id', $userId)
+            ->delete();
+
+        foreach (array_unique(array_map('intval', $menuIds)) as $menuId) {
+            if ($menuId > 0) {
+                PageAuth::create([
+                    'school_id' => $schoolId,
+                    'menu_id' => $menuId,
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+    }
+
+    public function getDesignationMenuIds(int $schoolId, int $designationId): array
+    {
+        return PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->where('designation_id', $designationId)
+            ->pluck('menu_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    public function getUserMenuIds(int $schoolId, int $userId): array
+    {
+        return PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->where('user_id', $userId)
+            ->pluck('menu_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    public function grantAdminAllSchoolMenus(int $schoolId, int $adminDesignationId): void
+    {
+        $menuIds = $this->getSchoolAssignableMenus()->pluck('id')->all();
+        $this->syncDesignationMenuAccess($schoolId, $adminDesignationId, $menuIds);
+    }
+
     public function syncSchoolDesignationAccess(int $schoolId, array $menuAccess): void
     {
         PageAuth::query()
@@ -499,6 +558,11 @@ class AccessMenuService
             'teacher' => 'Teacher',
             'student' => 'Student',
         ];
+    }
+
+    public function getUserEffectiveMenuIds(User $user): array
+    {
+        return $this->getAuthorizedMenuIds($user)->all();
     }
 
     protected function getAuthorizedMenuIds(User $user): Collection

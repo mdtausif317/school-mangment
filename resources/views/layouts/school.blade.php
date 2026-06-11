@@ -66,6 +66,18 @@
             @empty
                 <p class="text-white-50 small px-3 py-2 mb-0">No menus assigned. Contact administrator.</p>
             @endforelse
+
+            @if($user->designation?->slug === 'admin')
+                <div class="nav-label mt-2">Administration</div>
+                <a href="{{ route('school.users.index') }}"
+                   class="{{ request()->routeIs('school.users.*') ? 'active' : '' }}">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="{{ route('school.designations.index') }}"
+                   class="{{ request()->routeIs('school.designations.*') ? 'active' : '' }}">
+                    <i class="fas fa-id-badge me-2"></i>Designations
+                </a>
+            @endif
         </nav>
     </aside>
 
@@ -88,6 +100,11 @@
         <div class="p-4">
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'school_user' => \App\Http\Middleware\EnsureSchoolUser::class,
             'page_access' => \App\Http\Middleware\CheckPageAccess::class,
+            'school_admin' => \App\Http\Middleware\EnsureSchoolAdmin::class,
         ]);
 
         $middleware->redirectUsersTo(function (Request $request) {

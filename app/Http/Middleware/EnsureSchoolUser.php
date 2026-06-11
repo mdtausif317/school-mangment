@@ -21,6 +21,13 @@ class EnsureSchoolUser
                 ->with('error', 'Please log in to continue.');
         }
 
+        if (! $user->school?->portal_enabled) {
+            auth()->logout();
+
+            return redirect()->route('login')
+                ->with('error', 'School portal access is not enabled. Contact super admin.');
+        }
+
         return $next($request);
     }
 }

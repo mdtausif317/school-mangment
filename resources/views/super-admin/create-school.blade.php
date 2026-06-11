@@ -66,13 +66,16 @@
 
                 <hr class="my-4">
 
-                <h6 class="text-muted text-uppercase small mb-3">Menu Access by Designation</h6>
-                @include('super-admin.access-matrix', [
-                    'menus' => $menus,
-                    'designationLabels' => $designationLabels,
-                    'useDesignationSlugs' => $useDesignationSlugs,
-                    'currentAccess' => old('menu_access', $currentAccess),
-                ])
+                <div class="form-check">
+                    <input type="checkbox" name="portal_enabled" value="1" class="form-check-input" id="portal_enabled"
+                           {{ old('portal_enabled', true) ? 'checked' : '' }}>
+                    <label class="form-check-label fw-medium" for="portal_enabled">
+                        Enable school portal access
+                    </label>
+                    <p class="text-muted small mb-0 mt-1">
+                        School admin can login and manage which users get access to which pages.
+                    </p>
+                </div>
             </div>
             <div class="card-footer bg-white border-top p-4">
                 <button type="submit" class="btn btn-brand">

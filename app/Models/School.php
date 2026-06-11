@@ -16,12 +16,14 @@ class School extends Model
         'address',
         'logo',
         'is_active',
+        'portal_enabled',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'portal_enabled' => 'boolean',
         ];
     }
 

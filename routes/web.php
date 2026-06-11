@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\School\DashboardController as SchoolDashboardController;
+use App\Http\Controllers\School\DesignationController as SchoolDesignationController;
+use App\Http\Controllers\School\UserController as SchoolUserController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\MenuController;
 use App\Http\Controllers\SuperAdmin\SchoolController;
@@ -52,6 +54,18 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
     Route::get('/dashboard', [SchoolDashboardController::class, 'index'])
         ->middleware('page_access:dashboard')
         ->name('dashboard');
+
+    Route::middleware('school_admin')->group(function () {
+        Route::get('/manage/users', [SchoolUserController::class, 'index'])->name('users.index');
+        Route::get('/manage/users/create', [SchoolUserController::class, 'create'])->name('users.create');
+        Route::post('/manage/users', [SchoolUserController::class, 'store'])->name('users.store');
+        Route::get('/manage/users/{user}/access', [SchoolUserController::class, 'access'])->name('users.access');
+        Route::put('/manage/users/{user}/access', [SchoolUserController::class, 'updateAccess'])->name('users.access.update');
+
+        Route::get('/manage/designations', [SchoolDesignationController::class, 'index'])->name('designations.index');
+        Route::get('/manage/designations/create', [SchoolDesignationController::class, 'create'])->name('designations.create');
+        Route::post('/manage/designations', [SchoolDesignationController::class, 'store'])->name('designations.store');
+    });
 });
 
 require __DIR__.'/menus.php';

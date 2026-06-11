@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Designation;
-use App\Models\PageMenu;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +14,9 @@ class SchoolService
         protected AccessMenuService $accessMenu
     ) {}
 
-    public function createSchool(array $data, array $adminData, array $menuAccess = []): School
+    public function createSchool(array $data, array $adminData, bool $portalEnabled = false): School
     {
-        return DB::transaction(function () use ($data, $adminData, $menuAccess) {
+        return DB::transaction(function () use ($data, $adminData, $portalEnabled) {
             $school = School::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['slug'] ?? $data['name']),
@@ -25,6 +24,7 @@ class SchoolService
                 'phone' => $data['phone'] ?? null,
                 'address' => $data['address'] ?? null,
                 'is_active' => true,
+                'portal_enabled' => $portalEnabled,
             ]);
 
             $designations = $this->createDefaultDesignations($school);
@@ -39,19 +39,30 @@ class SchoolService
                 'is_active' => true,
             ]);
 
-            if (! empty($menuAccess)) {
-                $this->accessMenu->grantAccessByDesignationSlugs($school, $designations, $menuAccess);
-            } else {
-                $this->grantDefaultMenuAccess($school, $designations);
+            if ($portalEnabled) {
+                $this->accessMenu->grantAdminAllSchoolMenus(
+                    $school->id,
+                    $designations['admin']->id
+                );
             }
 
             return $school->load('designations');
         });
     }
 
-    public function updateSchoolAccess(School $school, array $menuAccess): void
+    public function setPortalAccess(School $school, bool $enabled): void
     {
-        $this->accessMenu->syncSchoolDesignationAccess($school->id, $menuAccess);
+        $school->update(['portal_enabled' => $enabled]);
+
+        if (! $enabled) {
+            return;
+        }
+
+        $adminDesignation = $school->designations()->where('slug', 'admin')->first();
+
+        if ($adminDesignation) {
+            $this->accessMenu->grantAdminAllSchoolMenus($school->id, $adminDesignation->id);
+        }
     }
 
     protected function createDefaultDesignations(School $school): array
@@ -73,20 +84,5 @@ class SchoolService
         }
 
         return $result;
-    }
-
-    protected function grantDefaultMenuAccess(School $school, array $designations): void
-    {
-        PageMenu::query()
-            ->whereNull('school_id')
-            ->where('scope', PageMenu::SCOPE_SCHOOL)
-            ->where('slug', 'dashboard')
-            ->each(function (PageMenu $menu) use ($school, $designations) {
-                $this->accessMenu->addDesignationPageAccess(
-                    $school->id,
-                    $menu->id,
-                    $designations['admin']->id
-                );
-            });
     }
 }

@@ -33,7 +33,7 @@
                         <li><strong>Slug</strong> — unique ID (auto from title)</li>
                         <li><strong>Parent</strong> — optional, to group menus together</li>
                         <li>Page link is set <strong>automatically</strong> — no need to choose route</li>
-                        <li>A <code>.blade.php</code> file is created in <code>resources/views/</code> automatically</li>
+                        <li>A <code>.blade.php</code> file is created in the folder you choose below</li>
                     </ul>
                 </div>
                 <form id="create_new_page">
@@ -59,6 +59,14 @@
                                 <i class="fas fa-sync-alt"></i>
                             </button>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Create page file in folder <span class="text-danger">*</span></label>
+                        <select name="page_folder" id="menu_page_folder" class="form-select" required>
+                            <option value="super-admin">Super Admin — resources/views/super-admin/</option>
+                            <option value="school">School — resources/views/school/</option>
+                        </select>
+                        <small class="text-muted" id="file_path_preview">File: resources/views/super-admin/your-slug.blade.php</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -122,6 +130,14 @@
                     <div class="mb-3">
                         <label class="form-label">Slug <span class="text-danger">*</span></label>
                         <input type="text" name="slug" id="edit_menu_slug" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Page file folder <span class="text-danger">*</span></label>
+                        <select name="page_folder" id="edit_page_folder" class="form-select" required>
+                            <option value="super-admin">Super Admin — resources/views/super-admin/</option>
+                            <option value="school">School — resources/views/school/</option>
+                        </select>
+                        <small class="text-muted" id="edit_file_path_preview"></small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -197,18 +213,57 @@ function slugify(text) {
         .replace(/^-+|-+$/g, '');
 }
 
+function scopeToFolder(scope) {
+    return scope === 'school' ? 'school' : 'super-admin';
+}
+
+function updateFilePreview(slugInput, folderSelect, previewEl, parentSelect = null) {
+    const slug = slugify(slugInput?.value || 'your-slug') || 'your-slug';
+    let folder = folderSelect?.value || 'super-admin';
+
+    if (parentSelect?.value) {
+        const parentScope = parentSelect.selectedOptions[0]?.dataset.scope;
+        folder = scopeToFolder(parentScope || 'platform');
+        if (folderSelect) {
+            folderSelect.value = folder;
+            folderSelect.disabled = true;
+        }
+    } else if (folderSelect) {
+        folderSelect.disabled = false;
+    }
+
+    if (previewEl) {
+        previewEl.textContent = `File: resources/views/${folder}/${slug}.blade.php`;
+    }
+}
+
 let slugManual = false;
 const titleInput = document.getElementById('menu_title');
 const slugInput = document.getElementById('menu_slug');
+const createParentSelect = document.getElementById('menu_parent_id');
+const createFolderSelect = document.getElementById('menu_page_folder');
+const filePreview = document.getElementById('file_path_preview');
 
 titleInput?.addEventListener('input', () => {
     if (!slugManual) slugInput.value = slugify(titleInput.value);
+    updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
 });
-slugInput?.addEventListener('input', () => { slugManual = true; });
+slugInput?.addEventListener('input', () => {
+    slugManual = true;
+    updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
+});
+createFolderSelect?.addEventListener('change', () => {
+    updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
+});
+createParentSelect?.addEventListener('change', () => {
+    updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
+});
 document.getElementById('regenerate_slug')?.addEventListener('click', () => {
     slugManual = false;
     slugInput.value = slugify(titleInput.value);
+    updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
 });
+updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
 
 document.getElementById('create_new_page')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -220,6 +275,7 @@ document.getElementById('create_new_page')?.addEventListener('submit', async (e)
         parent_id: form.parent_id.value || null,
         title: form.title.value,
         slug: form.slug.value,
+        page_folder: form.page_folder.value,
         icon: form.icon.value,
         display_in_menu: form.display_in_menu.checked ? 0 : 1,
     };
@@ -378,6 +434,19 @@ document.querySelectorAll('.menu-sortable').forEach(el => {
 
 const editMenuModal = new bootstrap.Modal(document.getElementById('editMenuModal'));
 const editParentSelect = document.getElementById('edit_parent_id');
+const editFolderSelect = document.getElementById('edit_page_folder');
+const editSlugInput = document.getElementById('edit_menu_slug');
+const editFilePreview = document.getElementById('edit_file_path_preview');
+
+editParentSelect?.addEventListener('change', () => {
+    updateFilePreview(editSlugInput, editFolderSelect, editFilePreview, editParentSelect);
+});
+editFolderSelect?.addEventListener('change', () => {
+    updateFilePreview(editSlugInput, editFolderSelect, editFilePreview, editParentSelect);
+});
+editSlugInput?.addEventListener('input', () => {
+    updateFilePreview(editSlugInput, editFolderSelect, editFilePreview, editParentSelect);
+});
 
 document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -386,7 +455,9 @@ document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
 
         document.getElementById('edit_menu_id').value = menuId;
         document.getElementById('edit_menu_title').value = row.dataset.title;
-        document.getElementById('edit_menu_slug').value = row.dataset.slug;
+        editSlugInput.value = row.dataset.slug;
+        editFolderSelect.value = scopeToFolder(row.dataset.scope || 'platform');
+        editFolderSelect.disabled = false;
         document.getElementById('edit_menu_icon').value = row.dataset.icon;
         document.getElementById('edit_display_in_menu').checked = row.dataset.display === '0';
 
@@ -395,6 +466,7 @@ document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
         });
         editParentSelect.value = row.dataset.parentId || '';
 
+        updateFilePreview(editSlugInput, editFolderSelect, editFilePreview, editParentSelect);
         editMenuModal.show();
     });
 });
@@ -408,6 +480,7 @@ document.getElementById('edit_menu_form')?.addEventListener('submit', async (e) 
         parent_id: form.parent_id.value || null,
         title: form.title.value,
         slug: form.slug.value,
+        page_folder: form.page_folder.value,
         icon: form.icon.value,
         display_in_menu: form.display_in_menu.checked ? 0 : 1,
     };
