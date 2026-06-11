@@ -19,6 +19,11 @@ class MenuPageService
         ],
         PageMenu::SCOPE_SCHOOL => [
             'dashboard',
+            'users-view',
+            'user-add',
+            'users',
+            'designations',
+            'designation-add',
         ],
     ];
 

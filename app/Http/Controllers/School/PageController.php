@@ -7,8 +7,21 @@ use Illuminate\View\View;
 
 class PageController extends Controller
 {
+    /** Menu slugs that use a controller instead of a plain blade file. */
+    protected array $handlers = [
+        'users-view' => [UserController::class, 'index'],
+        'users' => [UserController::class, 'index'],
+        'user-add' => [UserController::class, 'create'],
+        'designations' => [DesignationController::class, 'index'],
+        'designation-add' => [DesignationController::class, 'create'],
+    ];
+
     public function show(string $slug): View
     {
+        if (isset($this->handlers[$slug])) {
+            return app()->call($this->handlers[$slug]);
+        }
+
         $view = "school.{$slug}";
 
         if (! view()->exists($view)) {

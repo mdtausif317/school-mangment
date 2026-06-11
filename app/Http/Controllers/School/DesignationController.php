@@ -7,6 +7,7 @@ use App\Models\Designation;
 use App\Services\AccessMenuService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class DesignationController extends Controller
@@ -28,7 +29,7 @@ class DesignationController extends Controller
         $school = auth()->user()->school;
         $menus = $this->accessMenu->getSchoolAssignableMenus();
 
-        return view('school.designation-create', compact('menus', 'school'));
+        return view('school.designation-add', compact('menus', 'school'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -55,8 +56,10 @@ class DesignationController extends Controller
             $validated['menu_ids'] ?? []
         );
 
+        $route = Route::has('school.designations') ? 'school.designations' : 'school.dashboard';
+
         return redirect()
-            ->route('school.designations.index')
+            ->route($route)
             ->with('success', "Designation \"{$designation->name}\" created with page access.");
     }
 }

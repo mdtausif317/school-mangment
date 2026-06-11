@@ -7,7 +7,7 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="mb-3">
-            <a href="{{ route('school.users.index') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('school.users-view') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left me-1"></i> Back to Users
             </a>
         </div>

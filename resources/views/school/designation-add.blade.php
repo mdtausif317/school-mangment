@@ -6,7 +6,7 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <form action="{{ route('school.designations.store') }}" method="POST" class="card border-0 shadow-sm">
+        <form action="{{ route('school.designation-add.store') }}" method="POST" class="card border-0 shadow-sm">
             @csrf
             <div class="card-body p-4">
                 <div class="mb-3">
@@ -27,7 +27,9 @@
                 ])
             </div>
             <div class="card-footer bg-white border-top p-4">
-                <a href="{{ route('school.designations.index') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                @if(Route::has('school.designations'))
+                    <a href="{{ route('school.designations') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                @endif
                 <button type="submit" class="btn btn-brand">Create Designation</button>
             </div>
         </form>

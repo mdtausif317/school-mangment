@@ -56,15 +56,19 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
         ->name('dashboard');
 
     Route::middleware('school_admin')->group(function () {
-        Route::get('/manage/users', [SchoolUserController::class, 'index'])->name('users.index');
-        Route::get('/manage/users/create', [SchoolUserController::class, 'create'])->name('users.create');
-        Route::post('/manage/users', [SchoolUserController::class, 'store'])->name('users.store');
-        Route::get('/manage/users/{user}/access', [SchoolUserController::class, 'access'])->name('users.access');
-        Route::put('/manage/users/{user}/access', [SchoolUserController::class, 'updateAccess'])->name('users.access.update');
+        Route::post('/user-add', [SchoolUserController::class, 'store'])
+            ->middleware('page_access:user-add')
+            ->name('user-add.store');
+        Route::get('/users-view/{user}/access', [SchoolUserController::class, 'access'])
+            ->middleware('page_access:users-view')
+            ->name('users-view.access');
+        Route::put('/users-view/{user}/access', [SchoolUserController::class, 'updateAccess'])
+            ->middleware('page_access:users-view')
+            ->name('users-view.access.update');
 
-        Route::get('/manage/designations', [SchoolDesignationController::class, 'index'])->name('designations.index');
-        Route::get('/manage/designations/create', [SchoolDesignationController::class, 'create'])->name('designations.create');
-        Route::post('/manage/designations', [SchoolDesignationController::class, 'store'])->name('designations.store');
+        Route::post('/designation-add', [SchoolDesignationController::class, 'store'])
+            ->middleware('page_access:designation-add')
+            ->name('designation-add.store');
     });
 });
 

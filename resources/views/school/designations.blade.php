@@ -6,9 +6,11 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <p class="text-muted mb-0">Designations control default page access for users.</p>
-    <a href="{{ route('school.designations.create') }}" class="btn btn-brand btn-sm">
-        <i class="fas fa-plus me-1"></i> Add Designation
-    </a>
+    @if(Route::has('school.designation-add'))
+        <a href="{{ route('school.designation-add') }}" class="btn btn-brand btn-sm">
+            <i class="fas fa-plus me-1"></i> Add Designation
+        </a>
+    @endif
 </div>
 
 <div class="card border-0 shadow-sm">

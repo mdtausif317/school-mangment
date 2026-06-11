@@ -26,7 +26,7 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('school.users', compact('users', 'school'));
+        return view('school.users-view', compact('users', 'school'));
     }
 
     public function create(): View
@@ -34,7 +34,7 @@ class UserController extends Controller
         $school = auth()->user()->school;
         $designations = $school->designations()->orderBy('name')->get();
 
-        return view('school.user-create', compact('designations', 'school'));
+        return view('school.user-add', compact('designations', 'school'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -66,7 +66,7 @@ class UserController extends Controller
         ]);
 
         return redirect()
-            ->route('school.users.index')
+            ->route('school.users-view')
             ->with('success', 'User created. Access comes from their designation automatically.');
     }
 
@@ -97,7 +97,7 @@ class UserController extends Controller
         );
 
         return redirect()
-            ->route('school.users.index')
+            ->route('school.users-view')
             ->with('success', "Access updated for {$user->name}.");
     }
 
