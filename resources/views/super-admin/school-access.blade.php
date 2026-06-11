@@ -23,7 +23,7 @@
                 Set page access for <strong>{{ $school->name }}</strong>
             </div>
             <div class="card-body p-4">
-                @include('super-admin.schools.partials.access-matrix', [
+                @include('super-admin.access-matrix', [
                     'menus' => $menus,
                     'designations' => $designations,
                     'useDesignationSlugs' => $useDesignationSlugs,

@@ -17,10 +17,11 @@ class MenuController extends Controller
 
     public function index(): View
     {
-        return view('super-admin.menu.index', [
+        return view('super-admin.menu', [
             'parents' => $this->accessMenu->getParentMenus(),
             'menuTree' => $this->accessMenu->getAllMenusWithDisplay(),
             'allMenus' => $this->accessMenu->getAllGlobalMenus(),
+            'routeOptions' => $this->accessMenu->getMenuRouteOptions(),
             'menuScopes' => [
                 PageMenu::SCOPE_PLATFORM => 'Super Admin (Platform)',
                 PageMenu::SCOPE_SCHOOL => 'School Portal',

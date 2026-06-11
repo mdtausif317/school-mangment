@@ -30,10 +30,10 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Parent Menu</label>
-                        <select name="parent_id" class="form-select">
+                        <select name="parent_id" id="menu_parent_id" class="form-select">
                             <option value="">This is a Parent Menu</option>
                             @foreach($parents as $parent)
-                                <option value="{{ $parent->id }}">{{ $parent->title }}</option>
+                                <option value="{{ $parent->id }}" data-scope="{{ $parent->scope }}">{{ $parent->title }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -51,18 +51,18 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Route Name</label>
-                        <input type="text" name="route_name" class="form-control"
-                               placeholder="e.g. super-admin.dashboard">
-                        <small class="text-muted">Laravel route name for sidebar link</small>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Scope</label>
-                        <select name="scope" class="form-select">
+                        <select name="scope" id="menu_scope" class="form-select">
                             @foreach($menuScopes as $value => $label)
                                 <option value="{{ $value }}" {{ $value === 'platform' ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <small class="text-muted">Auto-set when a parent menu is selected</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Route Name</label>
+                        <select name="route_name" id="menu_route" class="form-select"></select>
+                        <small class="text-muted">Auto-suggested from slug — only GET routes without parameters</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -91,7 +91,7 @@
                     <p class="text-muted text-center py-4">No menus yet. Add your first menu item.</p>
                 @else
                     <div class="menu-sortable" id="menuSortableRoot" data-parent-id="">
-                        @include('super-admin.menu.partials.tree-item', ['menus' => $menuTree, 'parentId' => null])
+                        @include('super-admin.menu-tree', ['menus' => $menuTree, 'parentId' => null])
                     </div>
                 @endif
             </div>
@@ -115,7 +115,7 @@
                         <select name="parent_id" id="edit_parent_id" class="form-select">
                             <option value="">This is a Parent Menu</option>
                             @foreach($allMenus as $parent)
-                                <option value="{{ $parent->id }}">{{ $parent->title }} ({{ $parent->slug }})</option>
+                                <option value="{{ $parent->id }}" data-scope="{{ $parent->scope }}">{{ $parent->title }} ({{ $parent->slug }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -128,17 +128,16 @@
                         <input type="text" name="slug" id="edit_menu_slug" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Route Name</label>
-                        <input type="text" name="route_name" id="edit_menu_route" class="form-control"
-                               placeholder="e.g. super-admin.dashboard">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Scope</label>
                         <select name="scope" id="edit_menu_scope" class="form-select">
                             @foreach($menuScopes as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Route Name</label>
+                        <select name="route_name" id="edit_menu_route" class="form-select"></select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -198,6 +197,96 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+const routeOptions = @json($routeOptions);
+
+const routeAliases = {
+    platform: {
+        schools: 'super-admin.dashboard',
+        'create-school': 'super-admin.schools.create',
+        'school-add': 'super-admin.schools.create',
+        'menu-add': 'super-admin.menu.index',
+        dashboard: 'super-admin.dashboard',
+    },
+    school: {
+        dashboard: 'school.dashboard',
+    },
+};
+
+function suggestRouteName(slug, scope) {
+    const normalized = slugify(slug);
+    const prefix = scope === 'school' ? 'school.' : 'super-admin.';
+    const candidates = [];
+
+    if (routeAliases[scope]?.[normalized]) {
+        candidates.push(routeAliases[scope][normalized]);
+    }
+
+    candidates.push(
+        prefix + normalized,
+        prefix + normalized.replace(/-/g, '.'),
+    );
+
+    const routes = routeOptions[scope] || {};
+
+    for (const name of candidates) {
+        if (routes[name]) {
+            return name;
+        }
+    }
+
+    return '';
+}
+
+function populateRouteSelect(selectEl, scope, selected = '') {
+    const routes = routeOptions[scope] || {};
+    const keep = selected || selectEl.value;
+
+    selectEl.innerHTML = '<option value="">— No link (group label only) —</option>';
+
+    Object.keys(routes).sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        if (name === keep) {
+            opt.selected = true;
+        }
+        selectEl.appendChild(opt);
+    });
+
+    if (keep && !routes[keep]) {
+        const custom = document.createElement('option');
+        custom.value = keep;
+        custom.textContent = keep + ' (saved)';
+        custom.selected = true;
+        selectEl.appendChild(custom);
+    }
+}
+
+function applyParentScope(parentSelect, scopeSelect) {
+    const option = parentSelect.selectedOptions[0];
+    const parentScope = option?.dataset.scope;
+
+    if (parentSelect.value && parentScope) {
+        scopeSelect.value = parentScope;
+        scopeSelect.disabled = true;
+        return parentScope;
+    }
+
+    scopeSelect.disabled = false;
+    return scopeSelect.value;
+}
+
+function syncMenuRoute(parentSelect, scopeSelect, routeSelect, slugInput, manual = false) {
+    const scope = applyParentScope(parentSelect, scopeSelect);
+    populateRouteSelect(routeSelect, scope);
+
+    if (!manual && slugInput?.value) {
+        const suggested = suggestRouteName(slugInput.value, scope);
+        if (suggested) {
+            routeSelect.value = suggested;
+        }
+    }
+}
 
 function notify(message, type = 'success') {
     const toast = document.createElement('div');
@@ -215,16 +304,42 @@ function slugify(text) {
 }
 
 let slugManual = false;
+let routeManual = false;
 const titleInput = document.getElementById('menu_title');
 const slugInput = document.getElementById('menu_slug');
+const createParentSelect = document.getElementById('menu_parent_id');
+const createScopeSelect = document.getElementById('menu_scope');
+const createRouteSelect = document.getElementById('menu_route');
+
+populateRouteSelect(createRouteSelect, createScopeSelect.value);
+syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput);
 
 titleInput?.addEventListener('input', () => {
-    if (!slugManual) slugInput.value = slugify(titleInput.value);
+    if (!slugManual) {
+        slugInput.value = slugify(titleInput.value);
+        syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput, routeManual);
+    }
 });
-slugInput?.addEventListener('input', () => { slugManual = true; });
+slugInput?.addEventListener('input', () => {
+    slugManual = true;
+    syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput, routeManual);
+});
 document.getElementById('regenerate_slug')?.addEventListener('click', () => {
     slugManual = false;
+    routeManual = false;
     slugInput.value = slugify(titleInput.value);
+    syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput);
+});
+createParentSelect?.addEventListener('change', () => {
+    routeManual = false;
+    syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput);
+});
+createScopeSelect?.addEventListener('change', () => {
+    routeManual = false;
+    syncMenuRoute(createParentSelect, createScopeSelect, createRouteSelect, slugInput);
+});
+createRouteSelect?.addEventListener('change', () => {
+    routeManual = true;
 });
 
 document.getElementById('create_new_page')?.addEventListener('submit', async (e) => {
@@ -397,6 +512,25 @@ document.querySelectorAll('.menu-sortable').forEach(el => {
 
 const editMenuModal = new bootstrap.Modal(document.getElementById('editMenuModal'));
 const editParentSelect = document.getElementById('edit_parent_id');
+const editScopeSelect = document.getElementById('edit_menu_scope');
+const editRouteSelect = document.getElementById('edit_menu_route');
+const editSlugInput = document.getElementById('edit_menu_slug');
+let editRouteManual = false;
+
+editParentSelect?.addEventListener('change', () => {
+    editRouteManual = false;
+    syncMenuRoute(editParentSelect, editScopeSelect, editRouteSelect, editSlugInput);
+});
+editScopeSelect?.addEventListener('change', () => {
+    editRouteManual = false;
+    syncMenuRoute(editParentSelect, editScopeSelect, editRouteSelect, editSlugInput);
+});
+editSlugInput?.addEventListener('input', () => {
+    syncMenuRoute(editParentSelect, editScopeSelect, editRouteSelect, editSlugInput, editRouteManual);
+});
+editRouteSelect?.addEventListener('change', () => {
+    editRouteManual = true;
+});
 
 document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -405,9 +539,9 @@ document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
 
         document.getElementById('edit_menu_id').value = menuId;
         document.getElementById('edit_menu_title').value = row.dataset.title;
-        document.getElementById('edit_menu_slug').value = row.dataset.slug;
-        document.getElementById('edit_menu_route').value = row.dataset.route || '';
-        document.getElementById('edit_menu_scope').value = row.dataset.scope || 'platform';
+        editSlugInput.value = row.dataset.slug;
+        editScopeSelect.value = row.dataset.scope || 'platform';
+        editScopeSelect.disabled = false;
         document.getElementById('edit_menu_icon').value = row.dataset.icon;
         document.getElementById('edit_display_in_menu').checked = row.dataset.display === '0';
 
@@ -415,6 +549,10 @@ document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
             opt.hidden = opt.value === menuId;
         });
         editParentSelect.value = row.dataset.parentId || '';
+
+        editRouteManual = true;
+        populateRouteSelect(editRouteSelect, editScopeSelect.value, row.dataset.route || '');
+        applyParentScope(editParentSelect, editScopeSelect);
 
         editMenuModal.show();
     });

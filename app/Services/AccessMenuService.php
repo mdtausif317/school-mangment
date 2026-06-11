@@ -161,8 +161,103 @@ class AccessMenuService
             ->exists();
     }
 
+    public function getMenuRouteOptions(): array
+    {
+        $excluded = ['login', 'logout', 'super-admin.login'];
+
+        $options = [
+            PageMenu::SCOPE_PLATFORM => [],
+            PageMenu::SCOPE_SCHOOL => [],
+        ];
+
+        foreach (Route::getRoutes() as $route) {
+            $name = $route->getName();
+
+            if (! $name || in_array($name, $excluded, true)) {
+                continue;
+            }
+
+            if (! in_array('GET', $route->methods(), true) || $route->parameterNames()) {
+                continue;
+            }
+
+            if (str_starts_with($name, 'super-admin.')) {
+                $options[PageMenu::SCOPE_PLATFORM][$name] = $name;
+            } elseif (str_starts_with($name, 'school.')) {
+                $options[PageMenu::SCOPE_SCHOOL][$name] = $name;
+            }
+        }
+
+        ksort($options[PageMenu::SCOPE_PLATFORM]);
+        ksort($options[PageMenu::SCOPE_SCHOOL]);
+
+        return $options;
+    }
+
+    public function suggestRouteName(string $slug, string $scope): ?string
+    {
+        $normalized = Str::slug($slug);
+        $prefix = $scope === PageMenu::SCOPE_SCHOOL ? 'school.' : 'super-admin.';
+
+        $candidates = array_unique([
+            $prefix.$normalized,
+            $prefix.str_replace('-', '.', $normalized),
+        ]);
+
+        $aliases = [
+            PageMenu::SCOPE_PLATFORM => [
+                'schools' => 'super-admin.dashboard',
+                'create-school' => 'super-admin.schools.create',
+                'school-add' => 'super-admin.schools.create',
+                'menu-add' => 'super-admin.menu.index',
+                'dashboard' => 'super-admin.dashboard',
+            ],
+            PageMenu::SCOPE_SCHOOL => [
+                'dashboard' => 'school.dashboard',
+            ],
+        ];
+
+        if (isset($aliases[$scope][$normalized])) {
+            array_unshift($candidates, $aliases[$scope][$normalized]);
+        }
+
+        foreach ($candidates as $name) {
+            if (! Route::has($name)) {
+                continue;
+            }
+
+            $route = Route::getRoutes()->getByName($name);
+
+            if ($route && empty($route->parameterNames())) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    public function resolveMenuDefaults(array $data): array
+    {
+        if (! empty($data['parent_id'])) {
+            $parent = PageMenu::query()->find($data['parent_id']);
+
+            if ($parent) {
+                $data['scope'] = $parent->scope;
+            }
+        }
+
+        $data['scope'] = $data['scope'] ?? PageMenu::SCOPE_PLATFORM;
+
+        if (empty($data['route_name']) && ! empty($data['slug'])) {
+            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
+        }
+
+        return $data;
+    }
+
     public function addMenu(?int $schoolId, User $creator, array $data): PageMenu
     {
+        $data = $this->resolveMenuDefaults($data);
         $slug = Str::slug($data['slug'] ?? $data['title']);
 
         if ($this->menuQuery($schoolId)->where('slug', $slug)->exists()) {
@@ -202,6 +297,7 @@ class AccessMenuService
     public function updateMenu(int $menuId, array $data): PageMenu
     {
         $menu = PageMenu::query()->whereNull('school_id')->findOrFail($menuId);
+        $data = $this->resolveMenuDefaults($data);
         $slug = Str::slug($data['slug'] ?? $data['title']);
 
         if ($this->menuQuery(null)->where('slug', $slug)->where('id', '!=', $menuId)->exists()) {

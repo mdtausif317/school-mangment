@@ -19,7 +19,7 @@ class SchoolController extends Controller
 
     public function create(): View
     {
-        return view('super-admin.schools.create', [
+        return view('super-admin.create-school', [
             'menus' => $this->accessMenu->getSchoolAssignableMenus(),
             'designationLabels' => $this->accessMenu->defaultDesignationLabels(),
             'useDesignationSlugs' => true,
@@ -62,7 +62,7 @@ class SchoolController extends Controller
     {
         $school->load('designations');
 
-        return view('super-admin.schools.access', [
+        return view('super-admin.school-access', [
             'school' => $school,
             'menus' => $this->accessMenu->getSchoolAssignableMenus(),
             'designations' => $school->designations->sortBy('name'),

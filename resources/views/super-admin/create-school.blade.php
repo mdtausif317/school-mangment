@@ -67,7 +67,7 @@
                 <hr class="my-4">
 
                 <h6 class="text-muted text-uppercase small mb-3">Menu Access by Designation</h6>
-                @include('super-admin.schools.partials.access-matrix', [
+                @include('super-admin.access-matrix', [
                     'menus' => $menus,
                     'designationLabels' => $designationLabels,
                     'useDesignationSlugs' => $useDesignationSlugs,

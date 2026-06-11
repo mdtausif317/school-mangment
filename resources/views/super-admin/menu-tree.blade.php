@@ -72,7 +72,7 @@
 
         @if($menu->children->isNotEmpty())
             <div class="menu-sortable ms-3 mb-2" data-parent-id="{{ $menu->id }}">
-                @include('super-admin.menu.partials.tree-item', [
+                @include('super-admin.menu-tree', [
                     'menus' => $menu->children,
                     'parentId' => $menu->id,
                 ])
