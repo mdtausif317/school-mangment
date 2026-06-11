@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\PageMenu;
 use App\Services\AccessMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,11 +20,6 @@ class MenuController extends Controller
             'parents' => $this->accessMenu->getParentMenus(),
             'menuTree' => $this->accessMenu->getAllMenusWithDisplay(),
             'allMenus' => $this->accessMenu->getAllGlobalMenus(),
-            'routeOptions' => $this->accessMenu->getMenuRouteOptions(),
-            'menuScopes' => [
-                PageMenu::SCOPE_PLATFORM => 'Super Admin (Platform)',
-                PageMenu::SCOPE_SCHOOL => 'School Portal',
-            ],
         ]);
     }
 

@@ -22,10 +22,6 @@
                 <i class="{{ $menu->icon }} text-brand"></i>
                 <span class="fw-medium text-truncate">{{ $menu->title }}</span>
                 <code class="small text-muted">{{ $menu->slug }}</code>
-                @if($menu->route_name)
-                    <code class="small text-success">{{ $menu->route_name }}</code>
-                @endif
-                <span class="badge bg-light text-dark border">{{ $menu->scope === 'school' ? 'School' : 'Platform' }}</span>
                 @if($menu->children->isNotEmpty())
                     <span class="badge bg-secondary">{{ $menu->children->count() }}</span>
                 @endif

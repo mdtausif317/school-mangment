@@ -236,7 +236,7 @@ class AccessMenuService
         return null;
     }
 
-    public function resolveMenuDefaults(array $data): array
+    public function resolveMenuDefaults(array $data, ?PageMenu $existing = null): array
     {
         if (! empty($data['parent_id'])) {
             $parent = PageMenu::query()->find($data['parent_id']);
@@ -244,15 +244,29 @@ class AccessMenuService
             if ($parent) {
                 $data['scope'] = $parent->scope;
             }
+        } elseif (! empty($data['slug'])) {
+            $data['scope'] = $this->inferScopeFromSlug($data['slug']);
+        } elseif ($existing) {
+            $data['scope'] = $existing->scope;
         }
 
         $data['scope'] = $data['scope'] ?? PageMenu::SCOPE_PLATFORM;
 
-        if (empty($data['route_name']) && ! empty($data['slug'])) {
-            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
+        if (! empty($data['slug'])) {
+            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope'])
+                ?? ($existing?->route_name);
         }
 
         return $data;
+    }
+
+    protected function inferScopeFromSlug(string $slug): string
+    {
+        $schoolSlugs = ['dashboard', 'students', 'teachers', 'attendance', 'fees', 'reports', 'classes'];
+
+        return in_array(Str::slug($slug), $schoolSlugs, true)
+            ? PageMenu::SCOPE_SCHOOL
+            : PageMenu::SCOPE_PLATFORM;
     }
 
     public function addMenu(?int $schoolId, User $creator, array $data): PageMenu
@@ -297,7 +311,7 @@ class AccessMenuService
     public function updateMenu(int $menuId, array $data): PageMenu
     {
         $menu = PageMenu::query()->whereNull('school_id')->findOrFail($menuId);
-        $data = $this->resolveMenuDefaults($data);
+        $data = $this->resolveMenuDefaults($data, $menu);
         $slug = Str::slug($data['slug'] ?? $data['title']);
 
         if ($this->menuQuery(null)->where('slug', $slug)->where('id', '!=', $menuId)->exists()) {
