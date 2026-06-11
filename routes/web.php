@@ -36,6 +36,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->
 
 Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/school-view', [SuperAdminDashboardController::class, 'schoolView'])->name('school-view');
     Route::get('/schools/create', [SchoolController::class, 'create'])->name('schools.create');
     Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
     Route::get('/schools/{school}/access', [SchoolController::class, 'access'])->name('schools.access');

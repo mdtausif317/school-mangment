@@ -210,11 +210,13 @@ class AccessMenuService
 
         $aliases = [
             PageMenu::SCOPE_PLATFORM => [
-                'schools' => 'super-admin.dashboard',
+                'schools' => 'super-admin.school-view',
+                'school-view' => 'super-admin.school-view',
                 'create-school' => 'super-admin.schools.create',
                 'school-add' => 'super-admin.schools.create',
                 'menu-add' => 'super-admin.menu.index',
                 'dashboard' => 'super-admin.dashboard',
+                'super-dashboard' => 'super-admin.dashboard',
             ],
             PageMenu::SCOPE_SCHOOL => [
                 'dashboard' => 'school.dashboard',

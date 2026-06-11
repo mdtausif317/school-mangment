@@ -36,11 +36,34 @@ class MenuPageService
         'menu',
     ];
 
+    /** Slugs with dedicated routes in routes/web.php — skip in menus.php */
+    protected array $webRoutedSlugs = [
+        PageMenu::SCOPE_PLATFORM => ['dashboard', 'school-view', 'menu-add', 'create-school', 'school-add'],
+        PageMenu::SCOPE_SCHOOL => ['dashboard'],
+    ];
+
     public function usesAutoPage(PageMenu $menu): bool
     {
         $linked = $this->linkedSlugs[$menu->scope] ?? [];
 
         return ! in_array($menu->slug, $linked, true);
+    }
+
+    public function shouldRegisterMenuRoute(PageMenu $menu): bool
+    {
+        $webRouted = $this->webRoutedSlugs[$menu->scope] ?? [];
+
+        if (in_array($menu->slug, $webRouted, true)) {
+            return false;
+        }
+
+        if ($this->usesAutoPage($menu)) {
+            return true;
+        }
+
+        $folder = $menu->isSchoolMenu() ? 'school' : 'super-admin';
+
+        return File::exists(resource_path("views/{$folder}/{$menu->slug}.blade.php"));
     }
 
     public function syncMenu(PageMenu $menu, ?string $oldSlug = null, ?string $oldScope = null): void
@@ -117,8 +140,8 @@ class MenuPageService
             '',
         ];
 
-        $platform = $menus->filter(fn (PageMenu $m) => $m->isPlatformMenu() && $this->usesAutoPage($m));
-        $school = $menus->filter(fn (PageMenu $m) => $m->isSchoolMenu() && $this->usesAutoPage($m));
+        $platform = $menus->filter(fn (PageMenu $m) => $m->isPlatformMenu() && $this->shouldRegisterMenuRoute($m));
+        $school = $menus->filter(fn (PageMenu $m) => $m->isSchoolMenu() && $this->shouldRegisterMenuRoute($m));
 
         if ($platform->isNotEmpty()) {
             $lines[] = "Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {";
