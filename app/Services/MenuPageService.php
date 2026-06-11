@@ -12,6 +12,7 @@ class MenuPageService
     protected array $linkedSlugs = [
         PageMenu::SCOPE_PLATFORM => [
             'schools',
+            'school-view',
             'create-school',
             'school-add',
             'menu-add',

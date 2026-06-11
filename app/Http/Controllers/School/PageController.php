@@ -19,7 +19,9 @@ class PageController extends Controller
     public function show(string $slug): View
     {
         if (isset($this->handlers[$slug])) {
-            return app()->call($this->handlers[$slug]);
+            [$controller, $method] = $this->handlers[$slug];
+
+            return app($controller)->{$method}();
         }
 
         $view = "school.{$slug}";
