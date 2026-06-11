@@ -22,6 +22,9 @@ class GlobalMenuSeeder extends Seeder
         $accessMenu = app(AccessMenuService::class);
 
         $menus = [
+            ['title' => 'Schools', 'slug' => 'schools', 'icon' => 'fas fa-school'],
+            ['title' => 'School Add', 'slug' => 'create-school', 'icon' => 'fas fa-plus-circle'],
+            ['title' => 'Menu Management', 'slug' => 'menu-add', 'icon' => 'fas fa-bars'],
             ['title' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'fas fa-home'],
         ];
 
@@ -29,9 +32,10 @@ class GlobalMenuSeeder extends Seeder
             $existing = PageMenu::query()->where('slug', $menuData['slug'])->first();
 
             if ($existing) {
-                if ($existing->school_id !== null) {
-                    $existing->update(['school_id' => null]);
-                }
+                $existing->update([
+                    'school_id' => null,
+                    'title' => $menuData['title'],
+                ]);
 
                 continue;
             }

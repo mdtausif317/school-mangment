@@ -1,6 +1,7 @@
 @extends('layouts.super-admin')
 
 @section('title', 'Menu Management')
+@section('page-title', 'Menu Management')
 
 @push('styles')
 <style>
@@ -8,18 +9,16 @@
     .btn-outline-brand { border-color: #0a5f47; color: #0a5f47; }
     .btn-outline-brand:hover { background: #0a5f47; color: #fff; }
     .menu-panel { min-height: 500px; }
+    .drag-handle { cursor: grab; padding: .25rem .5rem; }
+    .drag-handle:active { cursor: grabbing; }
+    .menu-row.sortable-ghost { opacity: .45; }
+    .menu-row.sortable-chosen .menu-row-inner { border-color: #0a5f47; box-shadow: 0 0 0 2px rgba(10,95,71,.15); }
+    .menu-sortable { min-height: 8px; }
     @media (max-width: 768px) { .menu-panel { min-height: auto; } }
 </style>
 @endpush
 
 @section('content')
-<div class="d-flex align-items-center mb-4">
-    <a href="{{ route('super-admin.dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-    <h4 class="mb-0">Menu Management</h4>
-</div>
-
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm menu-panel">
@@ -69,18 +68,65 @@
 
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm menu-panel">
-            <div class="card-header bg-white fw-semibold">
-                <i class="fas fa-sitemap me-2 text-brand"></i>Menu Structure
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-sitemap me-2 text-brand"></i>Menu Structure</span>
+                <small class="text-muted"><i class="fas fa-grip-vertical me-1"></i>Drag to reorder or move</small>
             </div>
             <div class="card-body">
                 @if($menuTree->isEmpty())
                     <p class="text-muted text-center py-4">No menus yet. Add your first menu item.</p>
                 @else
-                    <div class="accordion" id="menuTreeAccordion">
-                        @include('super-admin.menu.partials.tree-item', ['menus' => $menuTree, 'depth' => 0])
+                    <div class="menu-sortable" id="menuSortableRoot" data-parent-id="">
+                        @include('super-admin.menu.partials.tree-item', ['menus' => $menuTree, 'parentId' => null])
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editMenuModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="edit_menu_form">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="menu_id" id="edit_menu_id">
+                    <div class="mb-3">
+                        <label class="form-label">Parent Menu</label>
+                        <select name="parent_id" id="edit_parent_id" class="form-select">
+                            <option value="">This is a Parent Menu</option>
+                            @foreach($allMenus as $parent)
+                                <option value="{{ $parent->id }}">{{ $parent->title }} ({{ $parent->slug }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Menu Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" id="edit_menu_title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Slug <span class="text-danger">*</span></label>
+                        <input type="text" name="slug" id="edit_menu_slug" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Icon</label>
+                        <input type="text" name="icon" id="edit_menu_icon" class="form-control">
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="display_in_menu" class="form-check-input" id="edit_display_in_menu">
+                        <label class="form-check-label" for="edit_display_in_menu">Display in Menu</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-brand">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -122,6 +168,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -267,6 +314,111 @@ document.querySelectorAll('.delete-btn').forEach(btn => {
             notify('Delete failed', 'error');
         }
     });
+});
+
+function collectMenuOrder() {
+    const items = [];
+    document.querySelectorAll('.menu-sortable').forEach(container => {
+        const parentId = container.dataset.parentId ? parseInt(container.dataset.parentId) : null;
+        container.querySelectorAll(':scope > .menu-row').forEach((row, index) => {
+            items.push({
+                id: parseInt(row.dataset.menuId),
+                parent_id: parentId,
+                sort_order: index + 1,
+            });
+        });
+    });
+    return items;
+}
+
+let reorderTimer = null;
+async function saveMenuOrder() {
+    clearTimeout(reorderTimer);
+    reorderTimer = setTimeout(async () => {
+        try {
+            const res = await fetch('{{ route('super-admin.menu.reorder') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify({ items: collectMenuOrder() }),
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                notify(data.message);
+            } else {
+                notify(data.message || 'Reorder failed', 'error');
+            }
+        } catch {
+            notify('Reorder failed', 'error');
+        }
+    }, 400);
+}
+
+document.querySelectorAll('.menu-sortable').forEach(el => {
+    new Sortable(el, {
+        group: 'menu-tree',
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        onEnd: saveMenuOrder,
+    });
+});
+
+const editMenuModal = new bootstrap.Modal(document.getElementById('editMenuModal'));
+const editParentSelect = document.getElementById('edit_parent_id');
+
+document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const row = btn.closest('.menu-row');
+        const menuId = row.dataset.menuId;
+
+        document.getElementById('edit_menu_id').value = menuId;
+        document.getElementById('edit_menu_title').value = row.dataset.title;
+        document.getElementById('edit_menu_slug').value = row.dataset.slug;
+        document.getElementById('edit_menu_icon').value = row.dataset.icon;
+        document.getElementById('edit_display_in_menu').checked = row.dataset.display === '0';
+
+        [...editParentSelect.options].forEach(opt => {
+            opt.hidden = opt.value === menuId;
+        });
+        editParentSelect.value = row.dataset.parentId || '';
+
+        editMenuModal.show();
+    });
+});
+
+document.getElementById('edit_menu_form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    const body = {
+        menu_id: parseInt(form.menu_id.value),
+        parent_id: form.parent_id.value || null,
+        title: form.title.value,
+        slug: form.slug.value,
+        icon: form.icon.value,
+        display_in_menu: form.display_in_menu.checked ? 0 : 1,
+    };
+
+    try {
+        const res = await fetch('{{ route('super-admin.menu.update') }}', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            notify(data.message);
+            editMenuModal.hide();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            notify(data.message || 'Error', 'error');
+        }
+    } catch {
+        notify('Update failed', 'error');
+    }
 });
 </script>
 @endpush

@@ -6,6 +6,7 @@ use App\Models\PageAuth;
 use App\Models\PageButton;
 use App\Models\PageButtonAuth;
 use App\Models\PageMenu;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -19,6 +20,11 @@ class AccessMenuService
             ->whereNull('parent_id')
             ->orderBy('sort_order')
             ->get();
+    }
+
+    public function getAllGlobalMenus(): Collection
+    {
+        return $this->menuQuery(null)->orderBy('title')->get();
     }
 
     public function getAllMenusWithDisplay(?int $schoolId = null): Collection
@@ -49,6 +55,43 @@ class AccessMenuService
             ->where('menu_id', $menuId)
             ->orderBy('id')
             ->get();
+    }
+
+    public function getSuperAdminSidebarMenu(): Collection
+    {
+        $menus = $this->menuQuery(null)
+            ->where('display', false)
+            ->orderBy('sort_order')
+            ->get();
+
+        return $this->buildMenuTreeWithDisplay($menus);
+    }
+
+    public function resolveSuperAdminMenuUrl(PageMenu $menu): string
+    {
+        $routeName = $this->superAdminRouteName($menu->slug);
+
+        return $routeName ? route($routeName) : route('super-admin.dashboard');
+    }
+
+    public function isSuperAdminMenuActive(PageMenu $menu): bool
+    {
+        return match ($menu->slug) {
+            'schools', 'dashboard' => request()->routeIs('super-admin.dashboard'),
+            'menu-add' => request()->routeIs('super-admin.menu.*'),
+            'schools-create', 'create-school' => request()->routeIs('super-admin.schools.*'),
+            default => false,
+        };
+    }
+
+    protected function superAdminRouteName(string $slug): ?string
+    {
+        return match ($slug) {
+            'dashboard', 'schools' => 'super-admin.dashboard',
+            'menu-add' => 'super-admin.menu.index',
+            'schools-create', 'create-school' => 'super-admin.schools.create',
+            default => null,
+        };
     }
 
     public function getSidebarMenu(User $user): Collection
@@ -141,6 +184,71 @@ class AccessMenuService
         PageMenu::query()->where('id', $menuId)->update(['display' => $hidden]);
     }
 
+    public function updateMenu(int $menuId, array $data): PageMenu
+    {
+        $menu = PageMenu::query()->whereNull('school_id')->findOrFail($menuId);
+        $slug = Str::slug($data['slug'] ?? $data['title']);
+
+        if ($this->menuQuery(null)->where('slug', $slug)->where('id', '!=', $menuId)->exists()) {
+            throw new \InvalidArgumentException('A menu with this slug already exists.');
+        }
+
+        $parentId = ! empty($data['parent_id']) ? (int) $data['parent_id'] : null;
+
+        if ($parentId === $menuId) {
+            throw new \InvalidArgumentException('A menu cannot be its own parent.');
+        }
+
+        if ($parentId && $this->isMenuDescendantOf($menuId, $parentId)) {
+            throw new \InvalidArgumentException('Cannot move a menu under its own child.');
+        }
+
+        $menu->update([
+            'parent_id' => $parentId,
+            'title' => $data['title'],
+            'slug' => $slug,
+            'icon' => $data['icon'] ?? 'fas fa-circle',
+            'display' => (bool) ($data['display_in_menu'] ?? false),
+        ]);
+
+        return $menu->fresh();
+    }
+
+    public function reorderMenus(?int $schoolId, array $items): void
+    {
+        foreach ($items as $item) {
+            $query = PageMenu::query()->where('id', (int) $item['id']);
+
+            if ($schoolId === null) {
+                $query->whereNull('school_id');
+            } else {
+                $query->where('school_id', $schoolId);
+            }
+
+            $query->update([
+                'parent_id' => $item['parent_id'] ?? null,
+                'sort_order' => (int) $item['sort_order'],
+            ]);
+        }
+    }
+
+    protected function isMenuDescendantOf(int $ancestorId, int $possibleDescendantId): bool
+    {
+        $current = PageMenu::query()->find($possibleDescendantId);
+
+        while ($current) {
+            if ((int) $current->parent_id === $ancestorId) {
+                return true;
+            }
+
+            $current = $current->parent_id
+                ? PageMenu::query()->find($current->parent_id)
+                : null;
+        }
+
+        return false;
+    }
+
     public function addButton(int $menuId, User $creator, array $data): PageButton
     {
         $button = PageButton::create([
@@ -180,6 +288,84 @@ class AccessMenuService
             'menu_id' => $menuId,
             'designation_id' => $designationId,
         ]);
+    }
+
+    public function getSchoolAssignableMenus(): Collection
+    {
+        return PageMenu::query()
+            ->whereNull('school_id')
+            ->whereNotIn('slug', $this->superAdminOnlySlugs())
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    public function getSchoolDesignationMenuAccess(int $schoolId): array
+    {
+        return PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->whereNotNull('designation_id')
+            ->get()
+            ->groupBy('menu_id')
+            ->map(fn ($rows) => $rows->pluck('designation_id')->map(fn ($id) => (int) $id)->all())
+            ->all();
+    }
+
+    public function syncSchoolDesignationAccess(int $schoolId, array $menuAccess): void
+    {
+        PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->whereNotNull('designation_id')
+            ->delete();
+
+        foreach ($menuAccess as $menuId => $designationIds) {
+            if (empty($designationIds)) {
+                continue;
+            }
+
+            foreach (array_unique($designationIds) as $designationId) {
+                PageAuth::create([
+                    'school_id' => $schoolId,
+                    'menu_id' => (int) $menuId,
+                    'designation_id' => (int) $designationId,
+                ]);
+            }
+        }
+    }
+
+    public function grantAccessByDesignationSlugs(School $school, array $designationsBySlug, array $menuAccessBySlug): void
+    {
+        foreach ($menuAccessBySlug as $menuId => $slugList) {
+            if (empty($slugList)) {
+                continue;
+            }
+
+            foreach (array_unique($slugList) as $slug) {
+                if (! isset($designationsBySlug[$slug])) {
+                    continue;
+                }
+
+                $this->addDesignationPageAccess(
+                    $school->id,
+                    (int) $menuId,
+                    $designationsBySlug[$slug]->id
+                );
+            }
+        }
+    }
+
+    public function defaultDesignationLabels(): array
+    {
+        return [
+            'admin' => 'Admin',
+            'principal' => 'Principal',
+            'teacher' => 'Teacher',
+            'student' => 'Student',
+        ];
+    }
+
+    protected function superAdminOnlySlugs(): array
+    {
+        return ['schools', 'menu-add', 'create-school', 'schools-create'];
     }
 
     protected function getAuthorizedMenuIds(User $user): Collection

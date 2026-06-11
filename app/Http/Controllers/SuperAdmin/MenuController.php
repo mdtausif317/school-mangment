@@ -19,6 +19,7 @@ class MenuController extends Controller
         return view('super-admin.menu.index', [
             'parents' => $this->accessMenu->getParentMenus(),
             'menuTree' => $this->accessMenu->getAllMenusWithDisplay(),
+            'allMenus' => $this->accessMenu->getAllGlobalMenus(),
         ]);
     }
 
@@ -47,6 +48,50 @@ class MenuController extends Controller
         } catch (\InvalidArgumentException $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
         }
+    }
+
+    public function update(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'menu_id' => ['required', 'integer', 'exists:pages_menu_list,id'],
+            'parent_id' => ['nullable', 'integer', 'exists:pages_menu_list,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:100'],
+            'display_in_menu' => ['nullable', 'in:0,1,true,false'],
+        ]);
+
+        if (isset($validated['display_in_menu'])) {
+            $validated['display_in_menu'] = in_array($validated['display_in_menu'], [1, '1', true], true) ? 1 : 0;
+        }
+
+        try {
+            $this->accessMenu->updateMenu((int) $validated['menu_id'], $validated);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Menu updated successfully.',
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer', 'exists:pages_menu_list,id'],
+            'items.*.parent_id' => ['nullable', 'integer', 'exists:pages_menu_list,id'],
+            'items.*.sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $this->accessMenu->reorderMenus(null, $validated['items']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Menu order saved.',
+        ]);
     }
 
     public function updateDisplay(Request $request): JsonResponse

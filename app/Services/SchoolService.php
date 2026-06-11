@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Designation;
-use App\Models\PageMenu;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +14,9 @@ class SchoolService
         protected AccessMenuService $accessMenu
     ) {}
 
-    public function createSchool(array $data, array $adminData): School
+    public function createSchool(array $data, array $adminData, array $menuAccess = []): School
     {
-        return DB::transaction(function () use ($data, $adminData) {
+        return DB::transaction(function () use ($data, $adminData, $menuAccess) {
             $school = School::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['slug'] ?? $data['name']),
@@ -39,10 +38,19 @@ class SchoolService
                 'is_active' => true,
             ]);
 
-            $this->grantDefaultMenuAccess($school, $designations);
+            if (! empty($menuAccess)) {
+                $this->accessMenu->grantAccessByDesignationSlugs($school, $designations, $menuAccess);
+            } else {
+                $this->grantDefaultMenuAccess($school, $designations);
+            }
 
             return $school->load('designations');
         });
+    }
+
+    public function updateSchoolAccess(School $school, array $menuAccess): void
+    {
+        $this->accessMenu->syncSchoolDesignationAccess($school->id, $menuAccess);
     }
 
     protected function createDefaultDesignations(School $school): array
@@ -68,17 +76,14 @@ class SchoolService
 
     protected function grantDefaultMenuAccess(School $school, array $designations): void
     {
-        $defaultSlugs = ['dashboard'];
-
-        PageMenu::query()
-            ->whereNull('school_id')
-            ->whereIn('slug', $defaultSlugs)
-            ->each(function (PageMenu $menu) use ($school, $designations) {
+        $this->accessMenu->getSchoolAssignableMenus()->each(function ($menu) use ($school, $designations) {
+            if ($menu->slug === 'dashboard') {
                 $this->accessMenu->addDesignationPageAccess(
                     $school->id,
                     $menu->id,
                     $designations['admin']->id
                 );
-            });
+            }
+        });
     }
 }

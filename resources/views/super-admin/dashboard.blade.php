@@ -1,18 +1,20 @@
 @extends('layouts.super-admin')
 
-@section('title', 'Dashboard')
+@section('title', 'Schools')
+@section('page-title', 'Schools')
+
+@push('styles')
+<style>
+    .btn-outline-brand { border-color: #0a5f47; color: #0a5f47; }
+    .btn-outline-brand:hover { background: #0a5f47; color: #fff; }
+</style>
+@endpush
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0">Schools</h4>
-    <div class="d-flex gap-2">
-        <a href="{{ route('super-admin.menu.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-bars me-1"></i> Menu Management
-        </a>
-        <a href="{{ route('super-admin.schools.create') }}" class="btn btn-brand">
-            <i class="fas fa-plus me-1"></i> Create School
-        </a>
-    </div>
+<div class="d-flex justify-content-end mb-4">
+    <a href="{{ route('super-admin.schools.create') }}" class="btn btn-brand">
+        <i class="fas fa-plus me-1"></i> School Add
+    </a>
 </div>
 
 <div class="card border-0 shadow-sm">
@@ -27,6 +29,7 @@
                     <th>Users</th>
                     <th>Status</th>
                     <th>Created</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,10 +48,15 @@
                             @endif
                         </td>
                         <td class="text-muted small">{{ $school->created_at->format('M d, Y') }}</td>
+                        <td class="text-end">
+                            <a href="{{ route('super-admin.schools.access', $school) }}" class="btn btn-sm btn-outline-brand">
+                                <i class="fas fa-key me-1"></i> Access
+                            </a>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             No schools yet. <a href="{{ route('super-admin.schools.create') }}">Create one</a>.
                         </td>
                     </tr>

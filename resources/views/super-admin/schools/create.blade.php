@@ -1,17 +1,11 @@
 @extends('layouts.super-admin')
 
-@section('title', 'Create School')
+@section('title', 'School Add')
+@section('page-title', 'School Add')
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{{ route('super-admin.dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h4 class="mb-0">Create School</h4>
-        </div>
-
+    <div class="col-lg-10">
         <form action="{{ route('super-admin.schools.store') }}" method="POST" class="card border-0 shadow-sm">
             @csrf
             <div class="card-body p-4">
@@ -70,14 +64,19 @@
                     </div>
                 </div>
 
-                <div class="alert alert-info mt-4 mb-0 small">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Default designations (Admin, Principal, Teacher, Student) and starter menus will be created automatically.
-                </div>
+                <hr class="my-4">
+
+                <h6 class="text-muted text-uppercase small mb-3">Menu Access by Designation</h6>
+                @include('super-admin.schools.partials.access-matrix', [
+                    'menus' => $menus,
+                    'designationLabels' => $designationLabels,
+                    'useDesignationSlugs' => $useDesignationSlugs,
+                    'currentAccess' => old('menu_access', $currentAccess),
+                ])
             </div>
             <div class="card-footer bg-white border-top p-4">
                 <button type="submit" class="btn btn-brand">
-                    <i class="fas fa-save me-1"></i> Create School
+                    <i class="fas fa-save me-1"></i> School Add
                 </button>
             </div>
         </form>
