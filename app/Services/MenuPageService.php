@@ -29,6 +29,10 @@ class MenuPageService
             'users',
             'designations',
             'designation-add',
+            'classes-view',
+            'class-add',
+            'students-view',
+            'student-add',
         ],
     ];
 

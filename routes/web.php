@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\School\ClassController as SchoolClassController;
 use App\Http\Controllers\School\DashboardController as SchoolDashboardController;
 use App\Http\Controllers\School\DesignationController as SchoolDesignationController;
+use App\Http\Controllers\School\StudentController as SchoolStudentController;
 use App\Http\Controllers\School\UserController as SchoolUserController;
 use App\Http\Controllers\School\SubscriptionController as SchoolSubscriptionController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -92,6 +94,14 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
             Route::post('/designation-add', [SchoolDesignationController::class, 'store'])
                 ->middleware('page_access:designation-add')
                 ->name('designation-add.store');
+
+            Route::post('/class-add', [SchoolClassController::class, 'store'])
+                ->middleware('page_access:class-add')
+                ->name('class-add.store');
+
+            Route::post('/student-add', [SchoolStudentController::class, 'store'])
+                ->middleware('page_access:student-add')
+                ->name('student-add.store');
         });
     });
 });

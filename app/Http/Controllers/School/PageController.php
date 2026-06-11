@@ -14,6 +14,10 @@ class PageController extends Controller
         'user-add' => [UserController::class, 'create'],
         'designations' => [DesignationController::class, 'index'],
         'designation-add' => [DesignationController::class, 'create'],
+        'classes-view' => [ClassController::class, 'index'],
+        'class-add' => [ClassController::class, 'create'],
+        'students-view' => [StudentController::class, 'index'],
+        'student-add' => [StudentController::class, 'create'],
     ];
 
     public function show(string $slug): View

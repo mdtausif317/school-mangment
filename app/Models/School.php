@@ -67,6 +67,16 @@ class School extends Model
         return $this->hasMany(SchoolMenuAccess::class);
     }
 
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class);
+    }
+
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(SchoolSubscription::class)

@@ -21,6 +21,5 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
     Route::get('/user-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'user-add')->middleware('page_access:user-add')->name('user-add');
     Route::get('/class-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'class-add')->middleware('page_access:class-add')->name('class-add');
     Route::get('/student-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'student-add')->middleware('page_access:student-add')->name('student-add');
-    Route::get('/', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', '')->middleware('page_access:')->name('');
     });
 });
