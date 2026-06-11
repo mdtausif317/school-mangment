@@ -70,7 +70,8 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
 
 Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->group(function () {
     Route::get('/subscription/expired', [SchoolSubscriptionController::class, 'expired'])->name('subscription.expired');
-    Route::post('/subscription/renew', [SchoolSubscriptionController::class, 'renew'])->name('subscription.renew');
+    Route::post('/subscription/razorpay/order', [SchoolSubscriptionController::class, 'createOrder'])->name('subscription.razorpay.order');
+    Route::post('/subscription/razorpay/verify', [SchoolSubscriptionController::class, 'verify'])->name('subscription.razorpay.verify');
 
     Route::middleware('school_subscription')->group(function () {
         Route::get('/dashboard', [SchoolDashboardController::class, 'index'])

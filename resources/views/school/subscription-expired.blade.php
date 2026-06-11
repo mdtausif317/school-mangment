@@ -45,16 +45,16 @@
                         <h5 class="fw-bold">Your subscription has expired</h5>
                         <p class="text-muted mb-0">
                             School portal access is blocked until you renew your plan.
-                            Select a package below and submit a renewal request. Super admin will activate after payment verification.
+                            Select a package below and pay securely with Razorpay.
                         </p>
                     </div>
                 </div>
 
-                @if($pendingPayment)
+                @if($pendingPayment && $pendingPayment->payment_method !== 'razorpay')
                     <div class="alert alert-info">
                         <i class="fas fa-hourglass-half me-2"></i>
                         <strong>Renewal pending:</strong> {{ $pendingPayment->plan->name }} (₹{{ number_format($pendingPayment->amount, 2) }})
-                        — submitted {{ $pendingPayment->created_at->diffForHumans() }}. Please wait for super admin approval.
+                        — waiting for super admin approval.
                     </div>
                 @else
                     <div class="card border-0 shadow-sm">
@@ -64,41 +64,47 @@
                         <div class="card-body p-4">
                             @if($plans->isEmpty())
                                 <p class="text-muted mb-0">No packages available. Contact super admin.</p>
+                            @elseif(!$razorpayConfigured)
+                                <div class="alert alert-warning mb-0">
+                                    Razorpay is not configured yet. Super admin must add API keys in <code>.env</code>.
+                                </div>
                             @else
-                                <form action="{{ route('school.subscription.renew') }}" method="POST">
-                                    @csrf
-                                    <div class="row g-3 mb-4">
-                                        @foreach($plans as $plan)
-                                            <div class="col-md-4">
-                                                <label class="plan-card card border h-100 mb-0">
-                                                    <div class="card-body">
-                                                        <input type="radio" name="subscription_plan_id" value="{{ $plan->id }}"
-                                                               class="form-check-input mb-2" {{ $loop->first ? 'checked' : '' }} required>
-                                                        <h6 class="fw-bold mb-1">{{ $plan->name }}</h6>
-                                                        <div class="text-brand fw-semibold fs-5 mb-2">₹{{ number_format($plan->price, 2) }}</div>
-                                                        <div class="small text-muted">{{ $plan->duration_days }} days</div>
-                                                        @if($plan->description)
-                                                            <div class="small mt-2">{{ $plan->description }}</div>
-                                                        @endif
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        @endforeach
+                                @if($pendingPayment)
+                                    <div class="alert alert-info mb-4">
+                                        <i class="fas fa-credit-card me-2"></i>
+                                        Payment started for <strong>{{ $pendingPayment->plan->name }}</strong>
+                                        (₹{{ number_format($pendingPayment->amount, 2) }}). Click below to complete payment.
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Payment Reference / Transaction ID</label>
-                                        <input type="text" name="payment_reference" class="form-control"
-                                               placeholder="Bank transfer ref, UPI ID, etc.">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Notes (optional)</label>
-                                        <textarea name="notes" class="form-control" rows="2"
-                                                  placeholder="Any message for super admin"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-brand">
-                                        <i class="fas fa-paper-plane me-1"></i> Submit Renewal Request
-                                    </button>
-                                </form>
+                                @endif
+
+                                <div class="row g-3 mb-4" id="planList">
+                                    @foreach($plans as $plan)
+                                        <div class="col-md-4">
+                                            <label class="plan-card card border h-100 mb-0">
+                                                <div class="card-body">
+                                                    <input type="radio" name="subscription_plan_id" value="{{ $plan->id }}"
+                                                           class="form-check-input plan-radio mb-2"
+                                                           data-plan-name="{{ $plan->name }}"
+                                                           {{ ($pendingPayment && $pendingPayment->subscription_plan_id == $plan->id) || (!$pendingPayment && $loop->first) ? 'checked' : '' }}
+                                                           {{ $pendingPayment && $pendingPayment->subscription_plan_id != $plan->id ? 'disabled' : '' }}>
+                                                    <h6 class="fw-bold mb-1">{{ $plan->name }}</h6>
+                                                    <div class="text-brand fw-semibold fs-5 mb-2">₹{{ number_format($plan->price, 2) }}</div>
+                                                    <div class="small text-muted">{{ $plan->duration_days }} days</div>
+                                                    @if($plan->description)
+                                                        <div class="small mt-2">{{ $plan->description }}</div>
+                                                    @endif
+                                                </div>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <button type="button" class="btn btn-brand" id="payBtn">
+                                    <i class="fas fa-credit-card me-1"></i> Pay with Razorpay
+                                </button>
+                                <p class="text-muted small mt-3 mb-0">
+                                    <i class="fas fa-lock me-1"></i> Secured by Razorpay — UPI, Card, Netbanking supported.
+                                </p>
                             @endif
                         </div>
                     </div>
@@ -106,5 +112,78 @@
             </div>
         </div>
     </div>
+
+    @if($razorpayConfigured && $plans->isNotEmpty() && (!$pendingPayment || $pendingPayment->payment_method === 'razorpay'))
+    <form id="verifyForm" action="{{ route('school.subscription.razorpay.verify') }}" method="POST" class="d-none">
+        @csrf
+        <input type="hidden" name="payment_id" id="verify_payment_id">
+        <input type="hidden" name="razorpay_order_id" id="verify_order_id">
+        <input type="hidden" name="razorpay_payment_id" id="verify_payment_ref">
+        <input type="hidden" name="razorpay_signature" id="verify_signature">
+    </form>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const payBtn = document.getElementById('payBtn');
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+        payBtn.addEventListener('click', async function () {
+            const selected = document.querySelector('.plan-radio:checked');
+            if (!selected) return;
+
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Please wait...';
+
+            try {
+                const res = await fetch('{{ route('school.subscription.razorpay.order') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ subscription_plan_id: selected.value }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Could not start payment');
+
+                const options = {
+                    key: data.key,
+                    amount: data.amount,
+                    currency: data.currency,
+                    name: '{{ config('app.name') }}',
+                    description: data.plan_name + ' — ' + data.school_name,
+                    order_id: data.order_id,
+                    prefill: {
+                        name: data.user_name,
+                        email: data.user_email,
+                    },
+                    theme: { color: '#0a5f47' },
+                    handler: function (response) {
+                        document.getElementById('verify_payment_id').value = data.payment_id;
+                        document.getElementById('verify_order_id').value = response.razorpay_order_id;
+                        document.getElementById('verify_payment_ref').value = response.razorpay_payment_id;
+                        document.getElementById('verify_signature').value = response.razorpay_signature;
+                        document.getElementById('verifyForm').submit();
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            payBtn.disabled = false;
+                            payBtn.innerHTML = '<i class="fas fa-credit-card me-1"></i> Pay with Razorpay';
+                        }
+                    }
+                };
+
+                new Razorpay(options).open();
+            } catch (err) {
+                alert(err.message);
+            }
+
+            payBtn.disabled = false;
+            payBtn.innerHTML = '<i class="fas fa-credit-card me-1"></i> Pay with Razorpay';
+        });
+    </script>
+    @endif
 </body>
 </html>

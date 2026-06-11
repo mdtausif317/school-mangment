@@ -85,15 +85,19 @@ class SubscriptionService
         ]);
     }
 
-    public function requestRenewal(School $school, SubscriptionPlan $plan, User $requestedBy, ?string $notes = null): SubscriptionPayment
+    public function prepareRazorpayPayment(School $school, SubscriptionPlan $plan, User $requestedBy): SubscriptionPayment
     {
         $pending = SubscriptionPayment::query()
             ->where('school_id', $school->id)
             ->where('status', SubscriptionPayment::STATUS_PENDING)
-            ->exists();
+            ->first();
 
         if ($pending) {
-            throw new \InvalidArgumentException('A renewal request is already pending. Please wait for approval.');
+            if ($pending->payment_method !== 'razorpay' || $pending->subscription_plan_id !== $plan->id) {
+                throw new \InvalidArgumentException('A renewal is already in progress. Please wait or contact super admin.');
+            }
+
+            return $pending;
         }
 
         return SubscriptionPayment::create([
@@ -101,10 +105,38 @@ class SubscriptionService
             'subscription_plan_id' => $plan->id,
             'amount' => $plan->price,
             'status' => SubscriptionPayment::STATUS_PENDING,
-            'payment_method' => 'bank_transfer',
-            'notes' => $notes,
+            'payment_method' => 'razorpay',
             'requested_by' => $requestedBy->id,
         ]);
+    }
+
+    public function completeRazorpayPayment(
+        SubscriptionPayment $payment,
+        string $razorpayOrderId,
+        string $razorpayPaymentId
+    ): SchoolSubscription {
+        if ($payment->status !== SubscriptionPayment::STATUS_PENDING) {
+            throw new \InvalidArgumentException('This payment is already processed.');
+        }
+
+        if ($payment->razorpay_order_id && $payment->razorpay_order_id !== $razorpayOrderId) {
+            throw new \InvalidArgumentException('Payment order mismatch.');
+        }
+
+        return DB::transaction(function () use ($payment, $razorpayOrderId, $razorpayPaymentId) {
+            $subscription = $this->createActiveSubscription($payment->school, $payment->plan);
+
+            $payment->update([
+                'status' => SubscriptionPayment::STATUS_COMPLETED,
+                'school_subscription_id' => $subscription->id,
+                'razorpay_order_id' => $razorpayOrderId,
+                'razorpay_payment_id' => $razorpayPaymentId,
+                'payment_reference' => $razorpayPaymentId,
+                'paid_at' => now(),
+            ]);
+
+            return $subscription;
+        });
     }
 
     public function approvePayment(SubscriptionPayment $payment, User $superAdmin, ?string $reference = null): SchoolSubscription

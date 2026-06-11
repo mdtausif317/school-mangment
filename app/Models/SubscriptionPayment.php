@@ -21,6 +21,8 @@ class SubscriptionPayment extends Model
         'status',
         'payment_method',
         'payment_reference',
+        'razorpay_order_id',
+        'razorpay_payment_id',
         'notes',
         'requested_by',
         'approved_by',
