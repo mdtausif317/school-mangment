@@ -20,7 +20,11 @@
             padding: .65rem 1.25rem; font-size: .925rem;
         }
         .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,.12); color: #fff; }
-        .sidebar .sub a { padding-left: 2.5rem; font-size: .875rem; }
+        .sidebar .nav-label {
+            padding: .75rem 1.25rem .35rem;
+            font-size: .7rem; text-transform: uppercase;
+            letter-spacing: .05em; color: rgba(255,255,255,.45);
+        }
         .main-content { margin-left: var(--sidebar-w); min-height: 100vh; }
         .top-bar { background: #fff; border-bottom: 1px solid #dee2e6; padding: .75rem 1.5rem; }
         .btn-brand { background: var(--brand); color: #fff; border: none; }
@@ -40,22 +44,28 @@
             <i class="fas fa-school me-2"></i>{{ $user->school->name ?? 'School' }}
         </div>
         <nav class="py-2">
-            @foreach($sidebarMenu as $menu)
+            @forelse($sidebarMenu as $menu)
                 @if($menu->children->isNotEmpty())
-                    <div class="px-3 pt-2 pb-1 small text-white-50 text-uppercase">{{ $menu->title }}</div>
+                    <div class="nav-label">{{ $menu->title }}</div>
                     @foreach($menu->children as $child)
-                        <a href="{{ route('school.dashboard') }}?page={{ $child->slug }}"
-                           class="{{ request()->get('page') === $child->slug ? 'active' : '' }}">
-                            <i class="{{ $child->icon }} me-2"></i>{{ $child->title }}
-                        </a>
+                        @if($child->route_name)
+                            <a href="{{ $accessMenu->resolveMenuUrl($child) }}"
+                               class="{{ $accessMenu->isMenuActive($child) ? 'active' : '' }}">
+                                <i class="{{ $child->icon }} me-2"></i>{{ $child->title }}
+                            </a>
+                        @endif
                     @endforeach
-                @else
-                    <a href="{{ route('school.dashboard') }}"
-                       class="{{ request()->routeIs('school.dashboard') && $menu->slug === 'dashboard' ? 'active' : '' }}">
+                @elseif($menu->route_name)
+                    <a href="{{ $accessMenu->resolveMenuUrl($menu) }}"
+                       class="{{ $accessMenu->isMenuActive($menu) ? 'active' : '' }}">
                         <i class="{{ $menu->icon }} me-2"></i>{{ $menu->title }}
                     </a>
+                @else
+                    <div class="nav-label">{{ $menu->title }}</div>
                 @endif
-            @endforeach
+            @empty
+                <p class="text-white-50 small px-3 py-2 mb-0">No menus assigned. Contact administrator.</p>
+            @endforelse
         </nav>
     </aside>
 

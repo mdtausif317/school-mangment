@@ -8,6 +8,8 @@
          data-menu-id="{{ $menu->id }}"
          data-title="{{ $menu->title }}"
          data-slug="{{ $menu->slug }}"
+         data-route="{{ $menu->route_name ?? '' }}"
+         data-scope="{{ $menu->scope ?? 'platform' }}"
          data-icon="{{ $menu->icon }}"
          data-parent-id="{{ $menu->parent_id ?? '' }}"
          data-display="{{ $menu->display ? 1 : 0 }}">
@@ -20,6 +22,10 @@
                 <i class="{{ $menu->icon }} text-brand"></i>
                 <span class="fw-medium text-truncate">{{ $menu->title }}</span>
                 <code class="small text-muted">{{ $menu->slug }}</code>
+                @if($menu->route_name)
+                    <code class="small text-success">{{ $menu->route_name }}</code>
+                @endif
+                <span class="badge bg-light text-dark border">{{ $menu->scope === 'school' ? 'School' : 'Platform' }}</span>
                 @if($menu->children->isNotEmpty())
                     <span class="badge bg-secondary">{{ $menu->children->count() }}</span>
                 @endif

@@ -54,37 +54,28 @@
             <i class="fas fa-shield-alt me-2"></i>Super Admin
         </div>
         <nav class="py-2">
-            @if($sidebarMenu->isNotEmpty())
-                @foreach($sidebarMenu as $menu)
-                    @if($menu->children->isNotEmpty())
-                        <div class="nav-label">{{ $menu->title }}</div>
-                        @foreach($menu->children as $child)
-                            <a href="{{ $accessMenu->resolveSuperAdminMenuUrl($child) }}"
-                               class="{{ $accessMenu->isSuperAdminMenuActive($child) ? 'active' : '' }}">
+            @forelse($sidebarMenu as $menu)
+                @if($menu->children->isNotEmpty())
+                    <div class="nav-label">{{ $menu->title }}</div>
+                    @foreach($menu->children as $child)
+                        @if($child->route_name)
+                            <a href="{{ $accessMenu->resolveMenuUrl($child) }}"
+                               class="{{ $accessMenu->isMenuActive($child) ? 'active' : '' }}">
                                 <i class="{{ $child->icon }} me-2"></i>{{ $child->title }}
                             </a>
-                        @endforeach
-                    @else
-                        <a href="{{ $accessMenu->resolveSuperAdminMenuUrl($menu) }}"
-                           class="{{ $accessMenu->isSuperAdminMenuActive($menu) ? 'active' : '' }}">
-                            <i class="{{ $menu->icon }} me-2"></i>{{ $menu->title }}
-                        </a>
-                    @endif
-                @endforeach
-            @else
-                <a href="{{ route('super-admin.dashboard') }}"
-                   class="{{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-school me-2"></i>Schools
-                </a>
-                <a href="{{ route('super-admin.schools.create') }}"
-                   class="{{ request()->routeIs('super-admin.schools.*') ? 'active' : '' }}">
-                    <i class="fas fa-plus-circle me-2"></i>School Add
-                </a>
-                <a href="{{ route('super-admin.menu.index') }}"
-                   class="{{ request()->routeIs('super-admin.menu.*') ? 'active' : '' }}">
-                    <i class="fas fa-bars me-2"></i>Menu Management
-                </a>
-            @endif
+                        @endif
+                    @endforeach
+                @elseif($menu->route_name)
+                    <a href="{{ $accessMenu->resolveMenuUrl($menu) }}"
+                       class="{{ $accessMenu->isMenuActive($menu) ? 'active' : '' }}">
+                        <i class="{{ $menu->icon }} me-2"></i>{{ $menu->title }}
+                    </a>
+                @else
+                    <div class="nav-label">{{ $menu->title }}</div>
+                @endif
+            @empty
+                <p class="text-white-50 small px-3 py-2 mb-0">No menus in sidebar. Add from Menu Management.</p>
+            @endforelse
         </nav>
     </aside>
 

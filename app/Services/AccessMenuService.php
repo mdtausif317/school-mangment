@@ -10,6 +10,7 @@ use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class AccessMenuService
@@ -59,7 +60,9 @@ class AccessMenuService
 
     public function getSuperAdminSidebarMenu(): Collection
     {
-        $menus = $this->menuQuery(null)
+        $menus = PageMenu::query()
+            ->whereNull('school_id')
+            ->where('scope', PageMenu::SCOPE_PLATFORM)
             ->where('display', false)
             ->orderBy('sort_order')
             ->get();
@@ -67,38 +70,44 @@ class AccessMenuService
         return $this->buildMenuTreeWithDisplay($menus);
     }
 
+    public function resolveMenuUrl(PageMenu $menu): string
+    {
+        if ($menu->route_name && Route::has($menu->route_name)) {
+            return route($menu->route_name);
+        }
+
+        return '#';
+    }
+
+    public function isMenuActive(PageMenu $menu): bool
+    {
+        if (! $menu->route_name) {
+            return false;
+        }
+
+        return request()->routeIs($menu->route_name)
+            || request()->routeIs($menu->route_name.'.*');
+    }
+
+    /** @deprecated Use resolveMenuUrl() */
     public function resolveSuperAdminMenuUrl(PageMenu $menu): string
     {
-        $routeName = $this->superAdminRouteName($menu->slug);
-
-        return $routeName ? route($routeName) : route('super-admin.dashboard');
+        return $this->resolveMenuUrl($menu);
     }
 
+    /** @deprecated Use isMenuActive() */
     public function isSuperAdminMenuActive(PageMenu $menu): bool
     {
-        return match ($menu->slug) {
-            'schools', 'dashboard' => request()->routeIs('super-admin.dashboard'),
-            'menu-add' => request()->routeIs('super-admin.menu.*'),
-            'schools-create', 'create-school' => request()->routeIs('super-admin.schools.*'),
-            default => false,
-        };
-    }
-
-    protected function superAdminRouteName(string $slug): ?string
-    {
-        return match ($slug) {
-            'dashboard', 'schools' => 'super-admin.dashboard',
-            'menu-add' => 'super-admin.menu.index',
-            'schools-create', 'create-school' => 'super-admin.schools.create',
-            default => null,
-        };
+        return $this->isMenuActive($menu);
     }
 
     public function getSidebarMenu(User $user): Collection
     {
         $menuIds = $this->getAuthorizedMenuIds($user);
 
-        $menus = $this->menuQuery(null)
+        $menus = PageMenu::query()
+            ->whereNull('school_id')
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
             ->where('display', false)
             ->whereIn('id', $menuIds)
             ->orderBy('sort_order')
@@ -113,7 +122,11 @@ class AccessMenuService
             return true;
         }
 
-        $menu = $this->menuQuery(null)->where('slug', $slug)->first();
+        $menu = PageMenu::query()
+            ->whereNull('school_id')
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
+            ->where('slug', $slug)
+            ->first();
 
         if (! $menu) {
             return false;
@@ -167,6 +180,8 @@ class AccessMenuService
             'parent_id' => $parentId,
             'title' => $data['title'],
             'slug' => $slug,
+            'route_name' => $data['route_name'] ?? null,
+            'scope' => $data['scope'] ?? PageMenu::SCOPE_PLATFORM,
             'icon' => $data['icon'] ?? 'fas fa-circle',
             'sort_order' => $sortOrder,
             'display' => (bool) ($data['display_in_menu'] ?? false),
@@ -207,6 +222,8 @@ class AccessMenuService
             'parent_id' => $parentId,
             'title' => $data['title'],
             'slug' => $slug,
+            'route_name' => $data['route_name'] ?? null,
+            'scope' => $data['scope'] ?? $menu->scope,
             'icon' => $data['icon'] ?? 'fas fa-circle',
             'display' => (bool) ($data['display_in_menu'] ?? false),
         ]);
@@ -294,7 +311,7 @@ class AccessMenuService
     {
         return PageMenu::query()
             ->whereNull('school_id')
-            ->whereNotIn('slug', $this->superAdminOnlySlugs())
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
             ->orderBy('sort_order')
             ->get();
     }
@@ -361,11 +378,6 @@ class AccessMenuService
             'teacher' => 'Teacher',
             'student' => 'Student',
         ];
-    }
-
-    protected function superAdminOnlySlugs(): array
-    {
-        return ['schools', 'menu-add', 'create-school', 'schools-create'];
     }
 
     protected function getAuthorizedMenuIds(User $user): Collection

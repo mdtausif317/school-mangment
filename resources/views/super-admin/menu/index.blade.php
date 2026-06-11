@@ -51,6 +51,20 @@
                         </div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Route Name</label>
+                        <input type="text" name="route_name" class="form-control"
+                               placeholder="e.g. super-admin.dashboard">
+                        <small class="text-muted">Laravel route name for sidebar link</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scope</label>
+                        <select name="scope" class="form-select">
+                            @foreach($menuScopes as $value => $label)
+                                <option value="{{ $value }}" {{ $value === 'platform' ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Icon</label>
                         <input type="text" name="icon" class="form-control" value="fas fa-circle" placeholder="fas fa-home">
                     </div>
@@ -112,6 +126,19 @@
                     <div class="mb-3">
                         <label class="form-label">Slug <span class="text-danger">*</span></label>
                         <input type="text" name="slug" id="edit_menu_slug" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Route Name</label>
+                        <input type="text" name="route_name" id="edit_menu_route" class="form-control"
+                               placeholder="e.g. super-admin.dashboard">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scope</label>
+                        <select name="scope" id="edit_menu_scope" class="form-select">
+                            @foreach($menuScopes as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -210,6 +237,8 @@ document.getElementById('create_new_page')?.addEventListener('submit', async (e)
         parent_id: form.parent_id.value || null,
         title: form.title.value,
         slug: form.slug.value,
+        route_name: form.route_name.value || null,
+        scope: form.scope.value,
         icon: form.icon.value,
         display_in_menu: form.display_in_menu.checked ? 0 : 1,
     };
@@ -237,7 +266,7 @@ document.querySelectorAll('.menu-display-toggle').forEach(toggle => {
     toggle.addEventListener('change', async function () {
         const menuId = this.dataset.menuId;
         const display = this.checked ? 0 : 1;
-        const row = this.closest('.menu-tree-item');
+        const row = this.closest('.menu-row');
 
         try {
             const res = await fetch('{{ route('super-admin.menu.display') }}', {
@@ -377,6 +406,8 @@ document.querySelectorAll('.edit-menu-trigger').forEach(btn => {
         document.getElementById('edit_menu_id').value = menuId;
         document.getElementById('edit_menu_title').value = row.dataset.title;
         document.getElementById('edit_menu_slug').value = row.dataset.slug;
+        document.getElementById('edit_menu_route').value = row.dataset.route || '';
+        document.getElementById('edit_menu_scope').value = row.dataset.scope || 'platform';
         document.getElementById('edit_menu_icon').value = row.dataset.icon;
         document.getElementById('edit_display_in_menu').checked = row.dataset.display === '0';
 
@@ -398,6 +429,8 @@ document.getElementById('edit_menu_form')?.addEventListener('submit', async (e) 
         parent_id: form.parent_id.value || null,
         title: form.title.value,
         slug: form.slug.value,
+        route_name: form.route_name.value || null,
+        scope: form.scope.value,
         icon: form.icon.value,
         display_in_menu: form.display_in_menu.checked ? 0 : 1,
     };

@@ -21,26 +21,60 @@ class GlobalMenuSeeder extends Seeder
 
         $accessMenu = app(AccessMenuService::class);
 
-        $menus = [
-            ['title' => 'Schools', 'slug' => 'schools', 'icon' => 'fas fa-school'],
-            ['title' => 'School Add', 'slug' => 'create-school', 'icon' => 'fas fa-plus-circle'],
-            ['title' => 'Menu Management', 'slug' => 'menu-add', 'icon' => 'fas fa-bars'],
-            ['title' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'fas fa-home'],
-        ];
+        $schools = $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Schools',
+            'slug' => 'schools',
+            'route_name' => 'super-admin.dashboard',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-school',
+            'parent_id' => null,
+        ]);
 
-        foreach ($menus as $menuData) {
-            $existing = PageMenu::query()->where('slug', $menuData['slug'])->first();
+        $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'School Add',
+            'slug' => 'create-school',
+            'route_name' => 'super-admin.schools.create',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-plus-circle',
+            'parent_id' => $schools->id,
+        ]);
 
-            if ($existing) {
-                $existing->update([
-                    'school_id' => null,
-                    'title' => $menuData['title'],
-                ]);
+        $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Menu Management',
+            'slug' => 'menu-add',
+            'route_name' => 'super-admin.menu.index',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-bars',
+            'parent_id' => null,
+        ]);
 
-                continue;
-            }
+        $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Dashboard',
+            'slug' => 'dashboard',
+            'route_name' => 'school.dashboard',
+            'scope' => PageMenu::SCOPE_SCHOOL,
+            'icon' => 'fas fa-home',
+            'parent_id' => null,
+        ]);
+    }
 
-            $accessMenu->addMenu(null, $superAdmin, $menuData);
+    protected function upsertMenu(AccessMenuService $accessMenu, User $superAdmin, array $menuData): PageMenu
+    {
+        $existing = PageMenu::query()->where('slug', $menuData['slug'])->first();
+
+        if ($existing) {
+            $existing->update([
+                'school_id' => null,
+                'parent_id' => $menuData['parent_id'],
+                'title' => $menuData['title'],
+                'route_name' => $menuData['route_name'],
+                'scope' => $menuData['scope'],
+                'icon' => $menuData['icon'],
+            ]);
+
+            return $existing->fresh();
         }
+
+        return $accessMenu->addMenu(null, $superAdmin, $menuData);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Designation;
+use App\Models\PageMenu;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -76,14 +77,16 @@ class SchoolService
 
     protected function grantDefaultMenuAccess(School $school, array $designations): void
     {
-        $this->accessMenu->getSchoolAssignableMenus()->each(function ($menu) use ($school, $designations) {
-            if ($menu->slug === 'dashboard') {
+        PageMenu::query()
+            ->whereNull('school_id')
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
+            ->where('slug', 'dashboard')
+            ->each(function (PageMenu $menu) use ($school, $designations) {
                 $this->accessMenu->addDesignationPageAccess(
                     $school->id,
                     $menu->id,
                     $designations['admin']->id
                 );
-            }
-        });
+            });
     }
 }

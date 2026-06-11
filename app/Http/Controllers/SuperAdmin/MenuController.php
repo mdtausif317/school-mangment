@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PageMenu;
 use App\Services\AccessMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,10 @@ class MenuController extends Controller
             'parents' => $this->accessMenu->getParentMenus(),
             'menuTree' => $this->accessMenu->getAllMenusWithDisplay(),
             'allMenus' => $this->accessMenu->getAllGlobalMenus(),
+            'menuScopes' => [
+                PageMenu::SCOPE_PLATFORM => 'Super Admin (Platform)',
+                PageMenu::SCOPE_SCHOOL => 'School Portal',
+            ],
         ]);
     }
 
@@ -29,6 +34,8 @@ class MenuController extends Controller
             'parent_id' => ['nullable', 'integer', 'exists:pages_menu_list,id'],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255'],
+            'route_name' => ['nullable', 'string', 'max:255'],
+            'scope' => ['nullable', 'in:platform,school'],
             'icon' => ['nullable', 'string', 'max:100'],
             'display_in_menu' => ['nullable', 'in:0,1,true,false'],
         ]);
@@ -57,6 +64,8 @@ class MenuController extends Controller
             'parent_id' => ['nullable', 'integer', 'exists:pages_menu_list,id'],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255'],
+            'route_name' => ['nullable', 'string', 'max:255'],
+            'scope' => ['nullable', 'in:platform,school'],
             'icon' => ['nullable', 'string', 'max:100'],
             'display_in_menu' => ['nullable', 'in:0,1,true,false'],
         ]);

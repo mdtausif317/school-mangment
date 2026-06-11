@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PageMenu extends Model
 {
+    public const SCOPE_PLATFORM = 'platform';
+
+    public const SCOPE_SCHOOL = 'school';
+
     protected $table = 'pages_menu_list';
 
     protected $fillable = [
@@ -15,6 +19,8 @@ class PageMenu extends Model
         'parent_id',
         'title',
         'slug',
+        'route_name',
+        'scope',
         'icon',
         'sort_order',
         'display',
@@ -55,5 +61,15 @@ class PageMenu extends Model
     public function isVisible(): bool
     {
         return ! $this->display;
+    }
+
+    public function isPlatformMenu(): bool
+    {
+        return $this->scope === self::SCOPE_PLATFORM;
+    }
+
+    public function isSchoolMenu(): bool
+    {
+        return $this->scope === self::SCOPE_SCHOOL;
     }
 }
