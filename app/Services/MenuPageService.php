@@ -45,8 +45,17 @@ class MenuPageService
         PageMenu::SCOPE_SCHOOL => ['dashboard'],
     ];
 
+    public function isGroupMenu(PageMenu $menu): bool
+    {
+        return $menu->slug === '#';
+    }
+
     public function usesAutoPage(PageMenu $menu): bool
     {
+        if ($this->isGroupMenu($menu)) {
+            return false;
+        }
+
         $linked = $this->linkedSlugs[$menu->scope] ?? [];
 
         return ! in_array($menu->slug, $linked, true);
@@ -54,6 +63,10 @@ class MenuPageService
 
     public function shouldRegisterMenuRoute(PageMenu $menu): bool
     {
+        if ($this->isGroupMenu($menu)) {
+            return false;
+        }
+
         $webRouted = $this->webRoutedSlugs[$menu->scope] ?? [];
 
         if (in_array($menu->slug, $webRouted, true)) {
@@ -71,6 +84,12 @@ class MenuPageService
 
     public function syncMenu(PageMenu $menu, ?string $oldSlug = null, ?string $oldScope = null): void
     {
+        if ($this->isGroupMenu($menu)) {
+            $this->regenerateRoutes();
+
+            return;
+        }
+
         if (! $this->usesAutoPage($menu)) {
             $this->regenerateRoutes();
 

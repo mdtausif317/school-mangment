@@ -62,6 +62,11 @@ class School extends Model
         return $this->hasMany(SubscriptionPayment::class);
     }
 
+    public function enabledMenus(): HasMany
+    {
+        return $this->hasMany(SchoolMenuAccess::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(SchoolSubscription::class)

@@ -27,7 +27,7 @@ class DesignationController extends Controller
     public function create(): View
     {
         $school = auth()->user()->school;
-        $menus = $this->accessMenu->getSchoolAssignableMenus();
+        $menus = $this->accessMenu->getSchoolMenuTree($school->id);
 
         return view('school.designation-add', compact('menus', 'school'));
     }

@@ -123,7 +123,7 @@
         box-shadow: inset 3px 0 0 #fff;
     }
 
-    .nav-link-item.sub { padding-left: 2.5rem; font-size: .875rem; }
+    .nav-link-item.sub { padding-left: 1.5rem; font-size: .875rem; }
 
     .app-sidebar.collapsed .nav-link-item.sub { padding-left: .85rem; }
 
@@ -164,11 +164,9 @@
         border: none;
         border-radius: 10px;
         background: transparent;
-        color: rgba(255,255,255,.75);
-        font-size: .75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .06em;
+        color: rgba(255,255,255,.88);
+        font-size: .9rem;
+        font-weight: 500;
         cursor: pointer;
         transition: background .15s, color .15s;
         text-align: left;

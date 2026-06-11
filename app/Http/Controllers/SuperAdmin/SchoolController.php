@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\School;
+use App\Services\AccessMenuService;
 use App\Services\SchoolService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +15,8 @@ class SchoolController extends Controller
 {
     public function __construct(
         protected SchoolService $schoolService,
-        protected SubscriptionService $subscriptions
+        protected SubscriptionService $subscriptions,
+        protected AccessMenuService $accessMenu
     ) {}
 
     public function create(): View
@@ -59,6 +61,8 @@ class SchoolController extends Controller
     {
         return view('super-admin.school-access', [
             'school' => $school,
+            'menus' => $this->accessMenu->getSchoolMenuTree(),
+            'selectedMenuIds' => $this->accessMenu->getSchoolEnabledMenuIds($school->id),
             'plans' => $this->subscriptions->getActivePlans(),
             'subscriptionStatus' => $this->subscriptions->subscriptionStatusLabel($school),
             'activeSubscription' => $this->subscriptions->getActiveSubscription($school),
@@ -68,13 +72,14 @@ class SchoolController extends Controller
     public function updateAccess(Request $request, School $school): RedirectResponse
     {
         $validated = $request->validate([
-            'portal_enabled' => ['nullable', 'boolean'],
+            'menu_ids' => ['nullable', 'array'],
+            'menu_ids.*' => ['integer', 'exists:pages_menu_list,id'],
         ]);
 
-        $this->schoolService->setPortalAccess($school, $request->boolean('portal_enabled'));
+        $this->schoolService->syncSchoolMenuAccess($school, $validated['menu_ids'] ?? []);
 
         return redirect()
             ->route('super-admin.schools.access', $school)
-            ->with('success', "Portal access updated for \"{$school->name}\".");
+            ->with('success', "Menu access updated for \"{$school->name}\".");
     }
 }

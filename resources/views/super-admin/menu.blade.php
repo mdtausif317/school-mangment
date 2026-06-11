@@ -207,10 +207,17 @@ function notify(message, type = 'success') {
 }
 
 function slugify(text) {
-    return text.toLowerCase().trim()
+    const trimmed = (text || '').trim();
+    if (trimmed === '#') return '#';
+
+    return trimmed.toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '');
+}
+
+function isGroupMenuSlug(slug) {
+    return (slug || '').trim() === '#';
 }
 
 function scopeToFolder(scope) {
@@ -218,8 +225,10 @@ function scopeToFolder(scope) {
 }
 
 function updateFilePreview(slugInput, folderSelect, previewEl, parentSelect = null) {
-    const slug = slugify(slugInput?.value || 'your-slug') || 'your-slug';
+    const rawSlug = (slugInput?.value || '').trim();
+    const slug = isGroupMenuSlug(rawSlug) ? '#' : (slugify(rawSlug) || 'your-slug');
     let folder = folderSelect?.value || 'super-admin';
+    const isParentMenu = !parentSelect?.value;
 
     if (parentSelect?.value) {
         const parentScope = parentSelect.selectedOptions[0]?.dataset.scope;
@@ -233,7 +242,15 @@ function updateFilePreview(slugInput, folderSelect, previewEl, parentSelect = nu
     }
 
     if (previewEl) {
-        previewEl.textContent = `File: resources/views/${folder}/${slug}.blade.php`;
+        if (isGroupMenuSlug(slug)) {
+            previewEl.textContent = 'Parent menu only — use # as slug (no page file, can be reused)';
+        } else {
+            previewEl.textContent = `File: resources/views/${folder}/${slug}.blade.php`;
+        }
+    }
+
+    if (isParentMenu && !slugManual && slugInput && !rawSlug) {
+        slugInput.value = '#';
     }
 }
 
@@ -256,6 +273,9 @@ createFolderSelect?.addEventListener('change', () => {
     updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
 });
 createParentSelect?.addEventListener('change', () => {
+    if (!createParentSelect.value && !slugManual && slugInput) {
+        slugInput.value = '#';
+    }
     updateFilePreview(slugInput, createFolderSelect, filePreview, createParentSelect);
 });
 document.getElementById('regenerate_slug')?.addEventListener('click', () => {

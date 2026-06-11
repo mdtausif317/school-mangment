@@ -96,4 +96,4 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
     });
 });
 
-require __DIR__.'/menus.php';
+require __DIR__ . '/menus.php';

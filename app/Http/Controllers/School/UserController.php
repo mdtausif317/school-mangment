@@ -75,7 +75,7 @@ class UserController extends Controller
         $this->ensureSameSchool($user);
 
         $school = auth()->user()->school;
-        $menus = $this->accessMenu->getSchoolAssignableMenus();
+        $menus = $this->accessMenu->getSchoolMenuTree($school->id);
         $selected = $this->accessMenu->getUserEffectiveMenuIds($user);
 
         return view('school.user-access', compact('user', 'menus', 'selected', 'school'));

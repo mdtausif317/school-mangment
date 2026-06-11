@@ -67,6 +67,24 @@ class SchoolService
             return;
         }
 
+        $this->syncAdminMenuAccess($school);
+    }
+
+    public function syncSchoolMenuAccess(School $school, array $menuIds): void
+    {
+        $menuIds = array_unique(array_map('intval', $menuIds));
+        $portalEnabled = $menuIds !== [];
+
+        $school->update(['portal_enabled' => $portalEnabled]);
+        $this->accessMenu->syncSchoolEnabledMenus($school->id, $menuIds);
+
+        if ($portalEnabled) {
+            $this->syncAdminMenuAccess($school);
+        }
+    }
+
+    protected function syncAdminMenuAccess(School $school): void
+    {
         $adminDesignation = $school->designations()->where('slug', 'admin')->first();
 
         if ($adminDesignation) {

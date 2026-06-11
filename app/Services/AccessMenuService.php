@@ -7,6 +7,7 @@ use App\Models\PageButton;
 use App\Models\PageButtonAuth;
 use App\Models\PageMenu;
 use App\Models\School;
+use App\Models\SchoolMenuAccess;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -264,8 +265,10 @@ class AccessMenuService
             }
         }
 
-        if (! empty($data['slug'])) {
+        if (! empty($data['slug']) && ! $this->isGroupMenuSlug((string) $data['slug'])) {
             $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
+        } elseif ($this->isGroupMenuSlug((string) ($data['slug'] ?? ''))) {
+            $data['route_name'] = null;
         }
 
         return $data;
@@ -274,11 +277,9 @@ class AccessMenuService
     public function addMenu(?int $schoolId, User $creator, array $data): PageMenu
     {
         $data = $this->resolveMenuDefaults($data);
-        $slug = Str::slug($data['slug'] ?? $data['title']);
+        $slug = $this->normalizeMenuSlug($data['slug'] ?? '', $data['title']);
 
-        if ($this->menuQuery($schoolId)->where('slug', $slug)->exists()) {
-            throw new \InvalidArgumentException('A menu with this slug already exists.');
-        }
+        $this->assertSlugAvailable($schoolId, $slug);
 
         $parentId = ! empty($data['parent_id']) ? $data['parent_id'] : null;
 
@@ -316,11 +317,9 @@ class AccessMenuService
     {
         $menu = PageMenu::query()->whereNull('school_id')->findOrFail($menuId);
         $data = $this->resolveMenuDefaults($data, $menu);
-        $slug = Str::slug($data['slug'] ?? $data['title']);
+        $slug = $this->normalizeMenuSlug($data['slug'] ?? '', $data['title']);
 
-        if ($this->menuQuery(null)->where('slug', $slug)->where('id', '!=', $menuId)->exists()) {
-            throw new \InvalidArgumentException('A menu with this slug already exists.');
-        }
+        $this->assertSlugAvailable(null, $slug, $menuId);
 
         $parentId = ! empty($data['parent_id']) ? (int) $data['parent_id'] : null;
 
@@ -427,13 +426,76 @@ class AccessMenuService
         ]);
     }
 
-    public function getSchoolAssignableMenus(): Collection
+    public function getAllSchoolMenus(): Collection
     {
         return PageMenu::query()
             ->whereNull('school_id')
             ->where('scope', PageMenu::SCOPE_SCHOOL)
             ->orderBy('sort_order')
             ->get();
+    }
+
+    public function getSchoolMenuTree(?int $schoolId = null): Collection
+    {
+        $menus = $schoolId === null
+            ? $this->getAllSchoolMenus()
+            : $this->getSchoolAssignableMenus($schoolId);
+
+        return $this->buildMenuTreeWithDisplay($menus);
+    }
+
+    public function getSchoolAssignableMenus(?int $schoolId = null): Collection
+    {
+        $menus = $this->getAllSchoolMenus();
+
+        if ($schoolId === null) {
+            return $menus;
+        }
+
+        $enabledIds = $this->getSchoolEnabledMenuIds($schoolId);
+
+        return $menus->whereIn('id', $enabledIds)->values();
+    }
+
+    public function getSchoolEnabledMenuIds(int $schoolId): array
+    {
+        $ids = SchoolMenuAccess::query()
+            ->where('school_id', $schoolId)
+            ->pluck('menu_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        $school = School::query()->find($schoolId);
+        if ($school?->portal_enabled) {
+            return $this->getAllSchoolMenus()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        return [];
+    }
+
+    public function syncSchoolEnabledMenus(int $schoolId, array $menuIds): void
+    {
+        $menuIds = array_unique(array_map('intval', $menuIds));
+
+        SchoolMenuAccess::query()->where('school_id', $schoolId)->delete();
+
+        foreach ($menuIds as $menuId) {
+            if ($menuId > 0) {
+                SchoolMenuAccess::create([
+                    'school_id' => $schoolId,
+                    'menu_id' => $menuId,
+                ]);
+            }
+        }
+
+        PageAuth::query()
+            ->where('school_id', $schoolId)
+            ->whereNotIn('menu_id', $menuIds)
+            ->delete();
     }
 
     public function getSchoolDesignationMenuAccess(int $schoolId): array
@@ -505,7 +567,7 @@ class AccessMenuService
 
     public function grantAdminAllSchoolMenus(int $schoolId, int $adminDesignationId): void
     {
-        $menuIds = $this->getSchoolAssignableMenus()->pluck('id')->all();
+        $menuIds = $this->getSchoolEnabledMenuIds($schoolId);
         $this->syncDesignationMenuAccess($schoolId, $adminDesignationId, $menuIds);
     }
 
@@ -588,5 +650,38 @@ class AccessMenuService
             fn ($q) => $q->whereNull('school_id'),
             fn ($q) => $q->where('school_id', $schoolId)
         );
+    }
+
+    protected function normalizeMenuSlug(string $slug, string $title): string
+    {
+        $trimmed = trim($slug);
+
+        if ($trimmed === '#') {
+            return '#';
+        }
+
+        return Str::slug($trimmed !== '' ? $trimmed : $title);
+    }
+
+    protected function isGroupMenuSlug(string $slug): bool
+    {
+        return trim($slug) === '#';
+    }
+
+    protected function assertSlugAvailable(?int $schoolId, string $slug, ?int $ignoreMenuId = null): void
+    {
+        if ($this->isGroupMenuSlug($slug)) {
+            return;
+        }
+
+        $query = $this->menuQuery($schoolId)->where('slug', $slug);
+
+        if ($ignoreMenuId) {
+            $query->where('id', '!=', $ignoreMenuId);
+        }
+
+        if ($query->exists()) {
+            throw new \InvalidArgumentException('A menu with this slug already exists.');
+        }
     }
 }
