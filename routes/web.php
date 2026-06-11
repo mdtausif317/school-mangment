@@ -4,9 +4,12 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\School\DashboardController as SchoolDashboardController;
 use App\Http\Controllers\School\DesignationController as SchoolDesignationController;
 use App\Http\Controllers\School\UserController as SchoolUserController;
+use App\Http\Controllers\School\SubscriptionController as SchoolSubscriptionController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\MenuController;
 use App\Http\Controllers\SuperAdmin\SchoolController;
+use App\Http\Controllers\SuperAdmin\SubscriptionPaymentController;
+use App\Http\Controllers\SuperAdmin\SubscriptionPlanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,6 +21,11 @@ Route::get('/', function () {
         }
 
         if ($user->isSchoolUser()) {
+            $school = $user->school;
+            if ($school && ! app(\App\Services\SubscriptionService::class)->hasActiveSubscription($school)) {
+                return redirect()->route('school.subscription.expired');
+            }
+
             return redirect()->route('school.dashboard');
         }
     }
@@ -49,27 +57,41 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
     Route::post('/menu/display', [MenuController::class, 'updateDisplay'])->name('menu.display');
     Route::post('/menu/button', [MenuController::class, 'storeButton'])->name('menu.button.store');
     Route::delete('/menu/button', [MenuController::class, 'destroyButton'])->name('menu.button.destroy');
+
+    Route::get('/plans', [SubscriptionPlanController::class, 'index'])->name('plans.index');
+    Route::post('/plans', [SubscriptionPlanController::class, 'store'])->name('plans.store');
+    Route::put('/plans/{plan}', [SubscriptionPlanController::class, 'update'])->name('plans.update');
+
+    Route::get('/payments', [SubscriptionPaymentController::class, 'index'])->name('payments.index');
+    Route::post('/payments/{payment}/approve', [SubscriptionPaymentController::class, 'approve'])->name('payments.approve');
+    Route::post('/payments/{payment}/reject', [SubscriptionPaymentController::class, 'reject'])->name('payments.reject');
+    Route::post('/schools/{school}/subscription', [SubscriptionPaymentController::class, 'assignSchool'])->name('schools.subscription.assign');
 });
 
 Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->group(function () {
-    Route::get('/dashboard', [SchoolDashboardController::class, 'index'])
-        ->middleware('page_access:dashboard')
-        ->name('dashboard');
+    Route::get('/subscription/expired', [SchoolSubscriptionController::class, 'expired'])->name('subscription.expired');
+    Route::post('/subscription/renew', [SchoolSubscriptionController::class, 'renew'])->name('subscription.renew');
 
-    Route::middleware('school_admin')->group(function () {
-        Route::post('/user-add', [SchoolUserController::class, 'store'])
-            ->middleware('page_access:user-add')
-            ->name('user-add.store');
-        Route::get('/users-view/{user}/access', [SchoolUserController::class, 'access'])
-            ->middleware('page_access:users-view')
-            ->name('users-view.access');
-        Route::put('/users-view/{user}/access', [SchoolUserController::class, 'updateAccess'])
-            ->middleware('page_access:users-view')
-            ->name('users-view.access.update');
+    Route::middleware('school_subscription')->group(function () {
+        Route::get('/dashboard', [SchoolDashboardController::class, 'index'])
+            ->middleware('page_access:dashboard')
+            ->name('dashboard');
 
-        Route::post('/designation-add', [SchoolDesignationController::class, 'store'])
-            ->middleware('page_access:designation-add')
-            ->name('designation-add.store');
+        Route::middleware('school_admin')->group(function () {
+            Route::post('/user-add', [SchoolUserController::class, 'store'])
+                ->middleware('page_access:user-add')
+                ->name('user-add.store');
+            Route::get('/users-view/{user}/access', [SchoolUserController::class, 'access'])
+                ->middleware('page_access:users-view')
+                ->name('users-view.access');
+            Route::put('/users-view/{user}/access', [SchoolUserController::class, 'updateAccess'])
+                ->middleware('page_access:users-view')
+                ->name('users-view.access.update');
+
+            Route::post('/designation-add', [SchoolDesignationController::class, 'store'])
+                ->middleware('page_access:designation-add')
+                ->name('designation-add.store');
+        });
     });
 });
 

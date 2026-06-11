@@ -14,6 +14,8 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
 });
 
 Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->group(function () {
+    Route::middleware('school_subscription')->group(function () {
     Route::get('/users-view', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'users-view')->middleware('page_access:users-view')->name('users-view');
     Route::get('/user-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'user-add')->middleware('page_access:user-add')->name('user-add');
+    });
 });

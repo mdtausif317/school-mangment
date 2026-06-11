@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'school_user' => \App\Http\Middleware\EnsureSchoolUser::class,
+            'school_subscription' => \App\Http\Middleware\EnsureSchoolSubscription::class,
             'page_access' => \App\Http\Middleware\CheckPageAccess::class,
             'school_admin' => \App\Http\Middleware\EnsureSchoolAdmin::class,
         ]);
@@ -27,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($user?->isSchoolUser()) {
+                $school = $user->school;
+                if ($school && ! app(\App\Services\SubscriptionService::class)->hasActiveSubscription($school)) {
+                    return route('school.subscription.expired');
+                }
+
                 return route('school.dashboard');
             }
 

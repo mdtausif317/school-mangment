@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Designation;
 use App\Models\School;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -11,12 +12,13 @@ use Illuminate\Support\Str;
 class SchoolService
 {
     public function __construct(
-        protected AccessMenuService $accessMenu
+        protected AccessMenuService $accessMenu,
+        protected SubscriptionService $subscriptions
     ) {}
 
-    public function createSchool(array $data, array $adminData, bool $portalEnabled = false): School
+    public function createSchool(array $data, array $adminData, bool $portalEnabled = false, ?int $planId = null): School
     {
-        return DB::transaction(function () use ($data, $adminData, $portalEnabled) {
+        return DB::transaction(function () use ($data, $adminData, $portalEnabled, $planId) {
             $school = School::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['slug'] ?? $data['name']),
@@ -44,6 +46,13 @@ class SchoolService
                     $school->id,
                     $designations['admin']->id
                 );
+
+                if ($planId) {
+                    $plan = SubscriptionPlan::query()->find($planId);
+                    if ($plan) {
+                        $this->subscriptions->activatePlan($school, $plan);
+                    }
+                }
             }
 
             return $school->load('designations');

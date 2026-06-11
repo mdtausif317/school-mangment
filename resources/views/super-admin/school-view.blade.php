@@ -29,6 +29,7 @@
                     <th>Users</th>
                     <th>Status</th>
                     <th>Portal</th>
+                    <th>Subscription</th>
                     <th>Created</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -55,6 +56,16 @@
                                 <span class="badge bg-secondary">Disabled</span>
                             @endif
                         </td>
+                        <td>
+                            @php $subLabel = $subscriptionLabels[$school->id] ?? '—'; @endphp
+                            @if(str_starts_with($subLabel, 'Active'))
+                                <span class="badge bg-success">{{ $subLabel }}</span>
+                            @elseif($school->portal_enabled)
+                                <span class="badge bg-danger">{{ $subLabel }}</span>
+                            @else
+                                <span class="text-muted small">—</span>
+                            @endif
+                        </td>
                         <td class="text-muted small">{{ $school->created_at->format('M d, Y') }}</td>
                         <td class="text-end">
                             <a href="{{ route('super-admin.schools.access', $school) }}" class="btn btn-sm btn-outline-brand">
@@ -64,7 +75,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="10" class="text-center text-muted py-4">
                             No schools yet. <a href="{{ route('super-admin.schools.create') }}">Create one</a>.
                         </td>
                     </tr>

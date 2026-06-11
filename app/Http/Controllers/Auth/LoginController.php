@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,10 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    public function __construct(
+        protected SubscriptionService $subscriptions
+    ) {}
+
     public function showSuperAdminLogin(): View
     {
         return view('auth.super-admin-login');
@@ -63,6 +68,10 @@ class LoginController extends Controller
             }
 
             $request->session()->regenerate();
+
+            if (! $this->subscriptions->hasActiveSubscription($user->school)) {
+                return redirect()->route('school.subscription.expired');
+            }
 
             return redirect()->route('school.dashboard');
         }

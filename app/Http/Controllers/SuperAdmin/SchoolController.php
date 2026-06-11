@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Services\SchoolService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,12 +13,15 @@ use Illuminate\View\View;
 class SchoolController extends Controller
 {
     public function __construct(
-        protected SchoolService $schoolService
+        protected SchoolService $schoolService,
+        protected SubscriptionService $subscriptions
     ) {}
 
     public function create(): View
     {
-        return view('super-admin.create-school');
+        return view('super-admin.create-school', [
+            'plans' => $this->subscriptions->getActivePlans(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -32,6 +36,7 @@ class SchoolController extends Controller
             'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
             'portal_enabled' => ['nullable', 'boolean'],
+            'subscription_plan_id' => ['nullable', 'exists:subscription_plans,id'],
         ]);
 
         $school = $this->schoolService->createSchool(
@@ -41,7 +46,8 @@ class SchoolController extends Controller
                 'email' => $validated['admin_email'],
                 'password' => $validated['admin_password'],
             ],
-            $request->boolean('portal_enabled')
+            $request->boolean('portal_enabled'),
+            $validated['subscription_plan_id'] ?? null
         );
 
         return redirect()
@@ -51,7 +57,12 @@ class SchoolController extends Controller
 
     public function access(School $school): View
     {
-        return view('super-admin.school-access', compact('school'));
+        return view('super-admin.school-access', [
+            'school' => $school,
+            'plans' => $this->subscriptions->getActivePlans(),
+            'subscriptionStatus' => $this->subscriptions->subscriptionStatusLabel($school),
+            'activeSubscription' => $this->subscriptions->getActiveSubscription($school),
+        ]);
     }
 
     public function updateAccess(Request $request, School $school): RedirectResponse

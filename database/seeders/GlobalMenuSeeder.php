@@ -39,6 +39,33 @@ class GlobalMenuSeeder extends Seeder
             'parent_id' => $schools->id,
         ]);
 
+        $subscriptions = $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Subscriptions',
+            'slug' => 'subscriptions',
+            'route_name' => 'super-admin.plans.index',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-credit-card',
+            'parent_id' => null,
+        ]);
+
+        $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Packages',
+            'slug' => 'plans',
+            'route_name' => 'super-admin.plans.index',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-box',
+            'parent_id' => $subscriptions->id,
+        ]);
+
+        $this->upsertMenu($accessMenu, $superAdmin, [
+            'title' => 'Payments',
+            'slug' => 'payments',
+            'route_name' => 'super-admin.payments.index',
+            'scope' => PageMenu::SCOPE_PLATFORM,
+            'icon' => 'fas fa-money-bill-wave',
+            'parent_id' => $subscriptions->id,
+        ]);
+
         $this->upsertMenu($accessMenu, $superAdmin, [
             'title' => 'Menu Management',
             'slug' => 'menu-add',

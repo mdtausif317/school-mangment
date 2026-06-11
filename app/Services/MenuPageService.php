@@ -18,6 +18,9 @@ class MenuPageService
             'menu-add',
             'dashboard',
             'super-dashboard',
+            'subscriptions',
+            'plans',
+            'payments',
         ],
         PageMenu::SCOPE_SCHOOL => [
             'dashboard',
@@ -38,7 +41,7 @@ class MenuPageService
 
     /** Slugs with dedicated routes in routes/web.php — skip in menus.php */
     protected array $webRoutedSlugs = [
-        PageMenu::SCOPE_PLATFORM => ['dashboard', 'school-view', 'menu-add', 'create-school', 'school-add'],
+        PageMenu::SCOPE_PLATFORM => ['dashboard', 'school-view', 'menu-add', 'create-school', 'school-add', 'plans', 'payments'],
         PageMenu::SCOPE_SCHOOL => ['dashboard'],
     ];
 
@@ -152,7 +155,9 @@ class MenuPageService
 
         if ($school->isNotEmpty()) {
             $lines[] = "Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->group(function () {";
+            $lines[] = "    Route::middleware('school_subscription')->group(function () {";
             $lines = array_merge($lines, $this->routeLines($school, 'school'));
+            $lines[] = '    });';
             $lines[] = '});';
         }
 

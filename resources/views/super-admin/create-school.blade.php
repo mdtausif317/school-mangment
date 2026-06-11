@@ -66,7 +66,7 @@
 
                 <hr class="my-4">
 
-                <div class="form-check">
+                <div class="form-check mb-3">
                     <input type="checkbox" name="portal_enabled" value="1" class="form-check-input" id="portal_enabled"
                            {{ old('portal_enabled', true) ? 'checked' : '' }}>
                     <label class="form-check-label fw-medium" for="portal_enabled">
@@ -76,6 +76,21 @@
                         School admin can login and manage which users get access to which pages.
                     </p>
                 </div>
+
+                @if($plans->isNotEmpty())
+                    <div class="mb-0">
+                        <label class="form-label">Initial Subscription Package (optional)</label>
+                        <select name="subscription_plan_id" class="form-select">
+                            <option value="">No subscription — assign later</option>
+                            @foreach($plans as $plan)
+                                <option value="{{ $plan->id }}" {{ old('subscription_plan_id') == $plan->id ? 'selected' : '' }}>
+                                    {{ $plan->name }} — ₹{{ number_format($plan->price, 2) }} / {{ $plan->duration_days }} days
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-muted small mt-1 mb-0">Activates only when portal access is enabled.</p>
+                    </div>
+                @endif
             </div>
             <div class="card-footer bg-white border-top p-4">
                 <button type="submit" class="btn btn-brand">
