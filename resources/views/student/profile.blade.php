@@ -1,6 +1,7 @@
 @extends('layouts.student')
 
 @section('title', 'My Profile')
+@section('page-title', 'My Profile')
 
 @section('content')
 <div class="row justify-content-center">

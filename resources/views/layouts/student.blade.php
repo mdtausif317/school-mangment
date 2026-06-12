@@ -4,70 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Student Portal') — {{ $user->school->name ?? 'School' }}</title>
+    <title>@yield('title', 'Student Portal') — {{ auth()->user()->school->name ?? 'School' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    @include('layouts.partials.sidebar-styles')
     <style>
-        :root { --brand: #0a5f47; --brand-light: #0d7a5c; }
-        body { background: #f4f6f8; min-height: 100vh; }
-        .student-nav {
-            background: linear-gradient(135deg, var(--brand), var(--brand-light));
-            box-shadow: 0 2px 12px rgba(10, 95, 71, .25);
+        .app-sidebar { display: flex; flex-direction: column; }
+        .student-sidebar-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,.15);
         }
-        .student-nav .navbar-brand, .student-nav .nav-link { color: rgba(255,255,255,.92) !important; }
-        .student-nav .nav-link.active, .student-nav .nav-link:hover { color: #fff !important; }
-        .student-nav .nav-link.active { font-weight: 600; border-bottom: 2px solid #fff; }
-        .btn-brand { background: var(--brand); border-color: var(--brand); color: #fff; }
-        .btn-brand:hover { background: var(--brand-light); border-color: var(--brand-light); color: #fff; }
+        .student-sidebar-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .app-sidebar.collapsed .student-sidebar-profile,
+        .app-sidebar.collapsed .sidebar-footer { display: none; }
+        .sidebar-logout-btn { cursor: pointer; }
+        .sidebar-logout-btn:hover { background: rgba(255,255,255,.12) !important; color: #fff; }
         .text-brand { color: var(--brand) !important; }
     </style>
     @stack('styles')
 </head>
 <body>
     @php $user = auth()->user(); @endphp
-    <nav class="navbar navbar-expand-lg student-nav">
-        <div class="container">
-            <a class="navbar-brand fw-semibold" href="{{ route('student.dashboard') }}">
-                <i class="fas fa-graduation-cap me-2"></i>{{ $user->school->name }}
-            </a>
-            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="collapse navbar-collapse" id="studentNav">
-                <ul class="navbar-nav me-auto ms-lg-3 gap-lg-1">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}"
-                           href="{{ route('student.dashboard') }}">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('student.profile') ? 'active' : '' }}"
-                           href="{{ route('student.profile') }}">My Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('student.id-card') ? 'active' : '' }}"
-                           href="{{ route('student.id-card') }}" target="_blank">My ID Card</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center gap-3 text-white py-2 py-lg-0">
-                    <span class="small"><i class="fas fa-user me-1"></i>{{ $user->name }}</span>
-                    <form action="{{ route('logout') }}" method="POST">@csrf
-                        <button class="btn btn-sm btn-outline-light">Logout</button>
-                    </form>
-                </div>
+
+    @include('layouts.partials.student-sidebar')
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button type="button" class="btn btn-sm btn-outline-secondary sidebar-toggle-mobile" id="sidebarMobileBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="top-bar-title">@yield('page-title', 'Dashboard')</span>
+            </div>
+            <div class="user-pill">
+                <span class="badge bg-secondary">Student</span>
+                <span class="name">{{ $user->name }}</span>
+                <form action="{{ route('logout') }}" method="POST">@csrf
+                    <button class="btn btn-outline-secondary btn-sm">Logout</button>
+                </form>
             </div>
         </div>
-    </nav>
-
-    <main class="container py-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        @yield('content')
-    </main>
+        <div class="p-3 p-md-4">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @yield('content')
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @include('layouts.partials.sidebar-scripts')
     @stack('scripts')
 </body>
 </html>
