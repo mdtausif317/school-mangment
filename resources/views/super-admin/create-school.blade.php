@@ -6,7 +6,7 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-lg-10">
-        <form action="{{ route('super-admin.schools.store') }}" method="POST" class="card border-0 shadow-sm">
+        <form action="{{ route('super-admin.schools.store') }}" method="POST" enctype="multipart/form-data" class="card border-0 shadow-sm">
             @csrf
             <div class="card-body p-4">
                 <h6 class="text-muted text-uppercase small mb-3">School Details</h6>
@@ -76,6 +76,12 @@
                         School admin can login and manage which users get access to which pages.
                     </p>
                 </div>
+
+                <hr class="my-4">
+
+                @include('super-admin.partials.id-card-settings')
+
+                <hr class="my-4">
 
                 @if($plans->isNotEmpty())
                     <div class="mb-0">

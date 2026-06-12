@@ -47,6 +47,26 @@
             </div>
         </form>
 
+        <form action="{{ route('super-admin.schools.id-card.update', $school) }}" method="POST"
+              enctype="multipart/form-data" class="card border-0 shadow-sm mb-4">
+            @csrf
+            @method('PUT')
+            <div class="card-header bg-white fw-semibold">
+                <i class="fas fa-id-card me-2 text-brand"></i> Student ID Card Design
+            </div>
+            <div class="card-body p-4">
+                @include('super-admin.partials.id-card-settings', [
+                    'settings' => $idCardSettings,
+                    'school' => $school,
+                ])
+            </div>
+            <div class="card-footer bg-white border-top p-4 text-end">
+                <button type="submit" class="btn btn-brand">
+                    <i class="fas fa-save me-1"></i> Save ID Card Design
+                </button>
+            </div>
+        </form>
+
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-credit-card me-2 text-brand"></i> Subscription</span>

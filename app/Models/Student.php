@@ -12,6 +12,7 @@ class Student extends Model
         'class_id',
         'roll_no',
         'name',
+        'photo',
         'email',
         'phone',
         'gender',
@@ -37,5 +38,19 @@ class Student extends Model
     public function schoolClass(): BelongsTo
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+
+    public function photoUrl(): ?string
+    {
+        if (! $this->photo) {
+            return null;
+        }
+
+        return asset('storage/'.$this->photo);
+    }
+
+    public function barcodeValue(): string
+    {
+        return sprintf('SCH%d-STU%d-R%s', $this->school_id, $this->id, $this->roll_no);
     }
 }

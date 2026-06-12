@@ -51,6 +51,7 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
     Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
     Route::get('/schools/{school}/access', [SchoolController::class, 'access'])->name('schools.access');
     Route::put('/schools/{school}/access', [SchoolController::class, 'updateAccess'])->name('schools.access.update');
+    Route::put('/schools/{school}/id-card', [SchoolController::class, 'updateIdCard'])->name('schools.id-card.update');
 
     Route::get('/menu-add', [MenuController::class, 'index'])->name('menu.index');
     Route::post('/menu', [MenuController::class, 'store'])->name('menu.store');
@@ -102,6 +103,16 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
             Route::post('/student-add', [SchoolStudentController::class, 'store'])
                 ->middleware('page_access:student-add')
                 ->name('student-add.store');
+
+            Route::get('/students-view/{student}/edit', [SchoolStudentController::class, 'edit'])
+                ->middleware('page_access:students-view')
+                ->name('students-view.edit');
+            Route::put('/students-view/{student}/edit', [SchoolStudentController::class, 'update'])
+                ->middleware('page_access:students-view')
+                ->name('students-view.update');
+            Route::get('/students-view/{student}/card', [SchoolStudentController::class, 'card'])
+                ->middleware('page_access:students-view')
+                ->name('students-view.card');
         });
     });
 });

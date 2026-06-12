@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Designation;
 use App\Models\School;
+use App\Models\SchoolIdCardSetting;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -13,12 +15,19 @@ class SchoolService
 {
     public function __construct(
         protected AccessMenuService $accessMenu,
-        protected SubscriptionService $subscriptions
+        protected SubscriptionService $subscriptions,
+        protected IdCardService $idCards
     ) {}
 
-    public function createSchool(array $data, array $adminData, bool $portalEnabled = false, ?int $planId = null): School
-    {
-        return DB::transaction(function () use ($data, $adminData, $portalEnabled, $planId) {
+    public function createSchool(
+        array $data,
+        array $adminData,
+        bool $portalEnabled = false,
+        ?int $planId = null,
+        ?array $idCardInput = null,
+        ?UploadedFile $schoolLogo = null
+    ): School {
+        return DB::transaction(function () use ($data, $adminData, $portalEnabled, $planId, $idCardInput, $schoolLogo) {
             $school = School::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['slug'] ?? $data['name']),
@@ -55,7 +64,25 @@ class SchoolService
                 }
             }
 
-            return $school->load('designations');
+            $this->idCards->saveForSchool($school, $idCardInput ?? [
+                'id_card_template' => SchoolIdCardSetting::TEMPLATE_CLASSIC,
+                'id_card_primary_color' => '#0a5f47',
+                'id_card_secondary_color' => '#0d7a5c',
+                'id_card_header_title' => 'Student Identity Card',
+                'id_card_footer_text' => null,
+                'id_card_show_photo' => true,
+                'id_card_show_roll_no' => true,
+                'id_card_show_class' => true,
+                'id_card_show_guardian' => true,
+                'id_card_show_phone' => false,
+                'id_card_show_barcode' => true,
+            ]);
+
+            if ($schoolLogo) {
+                $this->idCards->storeSchoolLogo($school, $schoolLogo);
+            }
+
+            return $school->load(['designations', 'idCardSettings']);
         });
     }
 

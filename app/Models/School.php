@@ -77,6 +77,20 @@ class School extends Model
         return $this->hasMany(Student::class);
     }
 
+    public function idCardSettings(): HasOne
+    {
+        return $this->hasOne(SchoolIdCardSetting::class);
+    }
+
+    public function logoUrl(): ?string
+    {
+        if (! $this->logo) {
+            return null;
+        }
+
+        return asset('storage/'.$this->logo);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(SchoolSubscription::class)

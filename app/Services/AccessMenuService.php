@@ -81,6 +81,19 @@ class AccessMenuService
             return route($menu->route_name);
         }
 
+        if ($this->isGroupMenuSlug($menu->slug)) {
+            return '#';
+        }
+
+        if ($menu->slug) {
+            $prefix = $menu->isSchoolMenu() ? 'school.' : 'super-admin.';
+            $fallback = $prefix.$menu->slug;
+
+            if (Route::has($fallback)) {
+                return route($fallback);
+            }
+        }
+
         return '#';
     }
 
@@ -265,13 +278,39 @@ class AccessMenuService
             }
         }
 
-        if (! empty($data['slug']) && ! $this->isGroupMenuSlug((string) $data['slug'])) {
-            $data['route_name'] = $this->suggestRouteName($data['slug'], $data['scope']);
-        } elseif ($this->isGroupMenuSlug((string) ($data['slug'] ?? ''))) {
+        if ($this->isGroupMenuSlug((string) ($data['slug'] ?? ''))) {
             $data['route_name'] = null;
+        } elseif (! empty($data['slug'])) {
+            $scope = $data['scope'] ?? $existing?->scope ?? PageMenu::SCOPE_PLATFORM;
+            $data['route_name'] = $this->suggestRouteName($data['slug'], $scope);
         }
 
         return $data;
+    }
+
+    public function fixSchoolMenuRouteNames(): int
+    {
+        $fixed = 0;
+
+        PageMenu::query()
+            ->whereNull('school_id')
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
+            ->whereNot('slug', '#')
+            ->where('slug', '!=', '')
+            ->each(function (PageMenu $menu) use (&$fixed) {
+                $expected = 'school.'.$menu->slug;
+
+                if ($menu->route_name === $expected) {
+                    return;
+                }
+
+                if (Route::has($expected)) {
+                    $menu->update(['route_name' => $expected]);
+                    $fixed++;
+                }
+            });
+
+        return $fixed;
     }
 
     public function addMenu(?int $schoolId, User $creator, array $data): PageMenu
