@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             SubscriptionPlanSeeder::class,
             GlobalMenuSeeder::class,
+            SchoolModuleMenuSeeder::class,
         ]);
     }
 }

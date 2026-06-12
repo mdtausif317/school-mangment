@@ -33,6 +33,11 @@ class MenuPageService
             'class-add',
             'students-view',
             'student-add',
+            'attendance-manage',
+            'fees-collect',
+            'reports',
+            'reports-attendance',
+            'reports-fees',
         ],
     ];
 

@@ -86,6 +86,28 @@ class SchoolService
         });
     }
 
+    public function updateSchool(School $school, array $data): School
+    {
+        $wasPortalEnabled = $school->portal_enabled;
+        $portalEnabled = (bool) ($data['portal_enabled'] ?? false);
+
+        $school->update([
+            'name' => $data['name'],
+            'slug' => Str::slug($data['slug'] ?? $data['name']),
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'address' => $data['address'] ?? null,
+            'is_active' => (bool) ($data['is_active'] ?? true),
+            'portal_enabled' => $portalEnabled,
+        ]);
+
+        if ($portalEnabled && ! $wasPortalEnabled) {
+            $this->syncAdminMenuAccess($school);
+        }
+
+        return $school->fresh();
+    }
+
     public function setPortalAccess(School $school, bool $enabled): void
     {
         $school->update(['portal_enabled' => $enabled]);

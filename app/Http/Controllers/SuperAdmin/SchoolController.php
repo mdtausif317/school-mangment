@@ -10,6 +10,7 @@ use App\Services\SchoolService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SchoolController extends Controller
@@ -72,6 +73,34 @@ class SchoolController extends Controller
         return redirect()
             ->route('super-admin.dashboard')
             ->with('success', "School \"{$school->name}\" created successfully.");
+    }
+
+    public function edit(School $school): View
+    {
+        return view('super-admin.edit-school', compact('school'));
+    }
+
+    public function update(Request $request, School $school): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('schools', 'slug')->ignore($school->id)],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+            'portal_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $updated = $this->schoolService->updateSchool($school, [
+            ...$validated,
+            'is_active' => $request->boolean('is_active'),
+            'portal_enabled' => $request->boolean('portal_enabled'),
+        ]);
+
+        return redirect()
+            ->route('super-admin.school-view')
+            ->with('success', "School \"{$updated->name}\" updated successfully.");
     }
 
     public function access(School $school): View

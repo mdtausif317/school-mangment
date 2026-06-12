@@ -18,6 +18,11 @@ class PageController extends Controller
         'class-add' => [ClassController::class, 'create'],
         'students-view' => [StudentController::class, 'index'],
         'student-add' => [StudentController::class, 'create'],
+        'attendance-manage' => [AttendanceController::class, 'index'],
+        'fees-collect' => [FeePaymentController::class, 'index'],
+        'reports' => [ReportController::class, 'index'],
+        'reports-attendance' => [ReportController::class, 'attendance'],
+        'reports-fees' => [ReportController::class, 'fees'],
     ];
 
     public function show(string $slug): View

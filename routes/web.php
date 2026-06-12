@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\School\AttendanceController as SchoolAttendanceController;
 use App\Http\Controllers\School\ClassController as SchoolClassController;
 use App\Http\Controllers\School\DashboardController as SchoolDashboardController;
 use App\Http\Controllers\School\DesignationController as SchoolDesignationController;
+use App\Http\Controllers\School\FeePaymentController as SchoolFeePaymentController;
 use App\Http\Controllers\School\StudentController as SchoolStudentController;
 use App\Http\Controllers\School\UserController as SchoolUserController;
 use App\Http\Controllers\School\SubscriptionController as SchoolSubscriptionController;
@@ -63,6 +65,8 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
     Route::get('/school-view', [SuperAdminDashboardController::class, 'schoolView'])->name('school-view');
     Route::get('/schools/create', [SchoolController::class, 'create'])->name('schools.create');
     Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
+    Route::get('/schools/{school}/edit', [SchoolController::class, 'edit'])->name('schools.edit');
+    Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('schools.update');
     Route::get('/schools/{school}/access', [SchoolController::class, 'access'])->name('schools.access');
     Route::put('/schools/{school}/access', [SchoolController::class, 'updateAccess'])->name('schools.access.update');
     Route::put('/schools/{school}/id-card', [SchoolController::class, 'updateIdCard'])->name('schools.id-card.update');
@@ -96,6 +100,28 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
             ->middleware('page_access:dashboard')
             ->name('dashboard');
 
+        Route::post('/student-add', [SchoolStudentController::class, 'store'])
+            ->middleware('page_access:student-add')
+            ->name('student-add.store');
+
+        Route::get('/students-view/{student}/edit', [SchoolStudentController::class, 'edit'])
+            ->middleware('page_access:students-view')
+            ->name('students-view.edit');
+        Route::put('/students-view/{student}/edit', [SchoolStudentController::class, 'update'])
+            ->middleware('page_access:students-view')
+            ->name('students-view.update');
+        Route::get('/students-view/{student}/card', [SchoolStudentController::class, 'card'])
+            ->middleware('page_access:students-view')
+            ->name('students-view.card');
+
+        Route::post('/attendance-manage', [SchoolAttendanceController::class, 'store'])
+            ->middleware('page_access:attendance-manage')
+            ->name('attendance-manage.store');
+
+        Route::post('/fees-collect', [SchoolFeePaymentController::class, 'store'])
+            ->middleware('page_access:fees-collect')
+            ->name('fees-collect.store');
+
         Route::middleware('school_admin')->group(function () {
             Route::post('/user-add', [SchoolUserController::class, 'store'])
                 ->name('user-add.store');
@@ -111,20 +137,6 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
             Route::post('/class-add', [SchoolClassController::class, 'store'])
                 ->middleware('page_access:class-add')
                 ->name('class-add.store');
-
-            Route::post('/student-add', [SchoolStudentController::class, 'store'])
-                ->middleware('page_access:student-add')
-                ->name('student-add.store');
-
-            Route::get('/students-view/{student}/edit', [SchoolStudentController::class, 'edit'])
-                ->middleware('page_access:students-view')
-                ->name('students-view.edit');
-            Route::put('/students-view/{student}/edit', [SchoolStudentController::class, 'update'])
-                ->middleware('page_access:students-view')
-                ->name('students-view.update');
-            Route::get('/students-view/{student}/card', [SchoolStudentController::class, 'card'])
-                ->middleware('page_access:students-view')
-                ->name('students-view.card');
         });
     });
 });

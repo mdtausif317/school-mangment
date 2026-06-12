@@ -67,7 +67,10 @@
                             @endif
                         </td>
                         <td class="text-muted small">{{ $school->created_at->format('M d, Y') }}</td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
+                            <a href="{{ route('super-admin.schools.edit', $school) }}" class="btn btn-sm btn-outline-secondary me-1">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </a>
                             <a href="{{ route('super-admin.schools.access', $school) }}" class="btn btn-sm btn-outline-brand">
                                 <i class="fas fa-key me-1"></i> Access
                             </a>
