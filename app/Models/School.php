@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 class School extends Model
 {
+    public ?string $previewLogoUrl = null;
+
     protected $fillable = [
         'name',
         'slug',
@@ -84,6 +86,10 @@ class School extends Model
 
     public function logoUrl(): ?string
     {
+        if ($this->previewLogoUrl) {
+            return $this->previewLogoUrl;
+        }
+
         if (! $this->logo) {
             return null;
         }

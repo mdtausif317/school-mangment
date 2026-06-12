@@ -52,6 +52,7 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
     Route::get('/schools/{school}/access', [SchoolController::class, 'access'])->name('schools.access');
     Route::put('/schools/{school}/access', [SchoolController::class, 'updateAccess'])->name('schools.access.update');
     Route::put('/schools/{school}/id-card', [SchoolController::class, 'updateIdCard'])->name('schools.id-card.update');
+    Route::post('/id-card/preview', [SchoolController::class, 'previewIdCard'])->name('id-card.preview');
 
     Route::get('/menu-add', [MenuController::class, 'index'])->name('menu.index');
     Route::post('/menu', [MenuController::class, 'store'])->name('menu.store');

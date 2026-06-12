@@ -58,6 +58,7 @@ class SchoolController extends Controller
                 'id_card_secondary_color',
                 'id_card_header_title',
                 'id_card_footer_text',
+                'id_card_custom_html',
                 'id_card_show_photo',
                 'id_card_show_roll_no',
                 'id_card_show_class',
@@ -86,6 +87,33 @@ class SchoolController extends Controller
         ]);
     }
 
+    public function previewIdCard(Request $request): View
+    {
+        $request->validate($this->idCards->previewValidationRules());
+
+        $existingSchool = $request->filled('school_id')
+            ? School::query()->find($request->integer('school_id'))
+            : null;
+
+        $schoolName = $request->input('school_name')
+            ?? $existingSchool?->name
+            ?? 'Sample School';
+
+        $previewSchool = $this->idCards->dummyPreviewSchool($schoolName, $existingSchool);
+
+        if ($request->hasFile('school_logo')) {
+            $this->idCards->applyPreviewLogo($previewSchool, $request->file('school_logo'));
+        }
+
+        $settings = $this->idCards->settingsFromInput($request->all());
+        $student = $this->idCards->dummyPreviewStudent($previewSchool);
+
+        return view('school.id-cards.print', array_merge(
+            $this->idCards->buildCardRenderData($student, $previewSchool, $settings),
+            ['isPreview' => true]
+        ));
+    }
+
     public function updateIdCard(Request $request, School $school): RedirectResponse
     {
         $validated = $request->validate($this->idCards->validationRules());
@@ -96,6 +124,7 @@ class SchoolController extends Controller
             'id_card_secondary_color',
             'id_card_header_title',
             'id_card_footer_text',
+            'id_card_custom_html',
             'id_card_show_photo',
             'id_card_show_roll_no',
             'id_card_show_class',

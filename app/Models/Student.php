@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Student extends Model
 {
+    public bool $isPreview = false;
+
     protected $fillable = [
         'school_id',
         'class_id',
@@ -42,6 +44,10 @@ class Student extends Model
 
     public function photoUrl(): ?string
     {
+        if ($this->isPreview) {
+            return 'https://ui-avatars.com/api/?name='.urlencode((string) $this->name).'&size=250&background=0a5f47&color=fff&format=png';
+        }
+
         if (! $this->photo) {
             return null;
         }
@@ -51,6 +57,10 @@ class Student extends Model
 
     public function barcodeValue(): string
     {
+        if ($this->isPreview) {
+            return sprintf('SCH%d-STU-PREVIEW-R%s', $this->school_id ?? 1, $this->roll_no ?? '101');
+        }
+
         return sprintf('SCH%d-STU%d-R%s', $this->school_id, $this->id, $this->roll_no);
     }
 }

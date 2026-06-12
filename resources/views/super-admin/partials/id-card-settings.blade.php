@@ -1,6 +1,10 @@
 @php
     $settings = $settings ?? null;
-    $show = $settings?->show_fields ?? app(\App\Services\IdCardService::class)->defaultShowFields();
+    $idCards = app(\App\Services\IdCardService::class);
+    $show = $settings?->show_fields ?? $idCards->defaultShowFields();
+    $selectedTemplate = old('id_card_template', $settings?->template ?? 'classic');
+    $customHtmlDefault = old('id_card_custom_html', $settings?->custom_html ?? $idCards->defaultCustomHtml());
+    $previewUrl = $previewUrl ?? route('super-admin.id-card.preview');
 @endphp
 
 <h6 class="text-muted text-uppercase small mb-3">Student ID Card Design</h6>
@@ -9,9 +13,9 @@
 <div class="row g-3">
     <div class="col-md-6">
         <label class="form-label">Card Template <span class="text-danger">*</span></label>
-        <select name="id_card_template" class="form-select @error('id_card_template') is-invalid @enderror" required>
+        <select name="id_card_template" id="id_card_template" class="form-select @error('id_card_template') is-invalid @enderror" required>
             @foreach(\App\Models\SchoolIdCardSetting::templateOptions() as $value => $label)
-                <option value="{{ $value }}" {{ old('id_card_template', $settings?->template ?? 'classic') === $value ? 'selected' : '' }}>
+                <option value="{{ $value }}" {{ $selectedTemplate === $value ? 'selected' : '' }}>
                     {{ $label }}
                 </option>
             @endforeach
@@ -49,6 +53,31 @@
         <input type="text" name="id_card_footer_text" class="form-control"
                value="{{ old('id_card_footer_text', $settings?->footer_text) }}" placeholder="e.g. Valid for current session">
     </div>
+    <div class="col-12" id="id_card_custom_section" style="{{ $selectedTemplate === 'custom' ? '' : 'display:none;' }}">
+        <label class="form-label">Custom HTML Template <span class="text-danger">*</span></label>
+        <textarea name="id_card_custom_html" id="id_card_custom_html" rows="14"
+                  class="form-control font-monospace small @error('id_card_custom_html') is-invalid @enderror"
+                  placeholder="Paste your HTML here using placeholders like @{{student_name}}">{{ $customHtmlDefault }}</textarea>
+        @error('id_card_custom_html')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <details class="mt-2">
+            <summary class="text-muted small" style="cursor:pointer;">Available placeholders</summary>
+            <div class="table-responsive mt-2">
+                <table class="table table-sm table-bordered small mb-0">
+                    <thead class="table-light">
+                        <tr><th>Placeholder</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($idCards->placeholderHelp() as $placeholder => $description)
+                            <tr>
+                                <td><code>{{ $placeholder }}</code></td>
+                                <td class="text-muted">{{ $description }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </div>
     <div class="col-12">
         <label class="form-label d-block mb-2">Show on ID Card</label>
         <div class="d-flex flex-wrap gap-3">
@@ -69,4 +98,129 @@
             @endforeach
         </div>
     </div>
+    <div class="col-12">
+        <button type="button" id="id_card_preview_btn" class="btn btn-outline-secondary">
+            <i class="fas fa-eye me-1"></i> Preview with Sample Data
+        </button>
+        <span class="text-muted small ms-2">Opens a new tab with dummy student data</span>
+    </div>
 </div>
+
+@once
+    @push('scripts')
+    <script>
+        (function () {
+            const select = document.getElementById('id_card_template');
+            const section = document.getElementById('id_card_custom_section');
+            const textarea = document.getElementById('id_card_custom_html');
+            const previewBtn = document.getElementById('id_card_preview_btn');
+            const previewUrl = @json($previewUrl);
+
+            if (!select || !section) return;
+
+            function toggleCustom() {
+                const isCustom = select.value === 'custom';
+                section.style.display = isCustom ? '' : 'none';
+                if (textarea) {
+                    textarea.required = isCustom;
+                }
+            }
+
+            select.addEventListener('change', toggleCustom);
+            toggleCustom();
+
+            if (!previewBtn) return;
+
+            const showFields = ['photo', 'roll_no', 'class', 'guardian', 'phone', 'barcode'];
+            const inputFields = [
+                'id_card_template',
+                'id_card_primary_color',
+                'id_card_secondary_color',
+                'id_card_header_title',
+                'id_card_footer_text',
+                'id_card_custom_html',
+            ];
+
+            function cloneField(source) {
+                if (source.type === 'file' && source.files.length) {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.name = source.name;
+                    const dt = new DataTransfer();
+                    Array.from(source.files).forEach(file => dt.items.add(file));
+                    input.files = dt.files;
+                    return input;
+                }
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = source.name;
+                input.value = source.value;
+                return input;
+            }
+
+            previewBtn.addEventListener('click', function () {
+                const parentForm = previewBtn.closest('form');
+                if (!parentForm) return;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = previewUrl;
+                form.target = '_blank';
+                form.enctype = 'multipart/form-data';
+                form.style.display = 'none';
+
+                const token = document.querySelector('input[name="_token"]');
+                if (token) {
+                    form.appendChild(cloneField(token));
+                }
+
+                inputFields.forEach(function (name) {
+                    const el = parentForm.querySelector('[name="' + name + '"]');
+                    if (el && el.value !== '') {
+                        form.appendChild(cloneField(el));
+                    }
+                });
+
+                showFields.forEach(function (field) {
+                    const cb = parentForm.querySelector('#id_card_show_' + field);
+                    if (cb && cb.checked) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'id_card_show_' + field;
+                        input.value = '1';
+                        form.appendChild(input);
+                    }
+                });
+
+                const logo = parentForm.querySelector('[name="school_logo"]');
+                if (logo && logo.files.length) {
+                    form.appendChild(cloneField(logo));
+                }
+
+                const schoolId = @json($school->id ?? null);
+                if (schoolId) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'school_id';
+                    input.value = schoolId;
+                    form.appendChild(input);
+                }
+
+                const schoolNameInput = document.querySelector('input[name="name"]');
+                if (schoolNameInput && schoolNameInput.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'school_name';
+                    input.value = schoolNameInput.value;
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+                form.remove();
+            });
+        })();
+    </script>
+    @endpush
+@endonce

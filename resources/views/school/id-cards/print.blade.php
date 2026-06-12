@@ -25,7 +25,13 @@
     @stack('card-styles')
 </head>
 <body>
-    @include($cardView)
+    @if(!empty($isPreview))
+        <div class="no-print alert alert-info text-center mx-auto mb-3" style="max-width:340px;">
+            <strong>Preview</strong> — sample dummy data (John Doe, Class 10 — A)
+        </div>
+    @endif
+
+    @include($cardView, ['customHtml' => $customHtml ?? null])
 
     <div class="no-print">
         <button type="button" class="btn btn-success me-2" onclick="window.print()">Print Card</button>

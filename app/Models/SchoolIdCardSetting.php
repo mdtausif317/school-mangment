@@ -13,6 +13,8 @@ class SchoolIdCardSetting extends Model
 
     public const TEMPLATE_HORIZONTAL = 'horizontal';
 
+    public const TEMPLATE_CUSTOM = 'custom';
+
     protected $fillable = [
         'school_id',
         'template',
@@ -21,6 +23,7 @@ class SchoolIdCardSetting extends Model
         'header_title',
         'footer_text',
         'show_fields',
+        'custom_html',
     ];
 
     protected function casts(): array
@@ -40,12 +43,18 @@ class SchoolIdCardSetting extends Model
         return (bool) ($this->show_fields[$field] ?? false);
     }
 
+    public function isCustomTemplate(): bool
+    {
+        return $this->template === self::TEMPLATE_CUSTOM;
+    }
+
     public static function templateOptions(): array
     {
         return [
             self::TEMPLATE_CLASSIC => 'Classic — portrait, centered photo',
             self::TEMPLATE_MODERN => 'Modern — color sidebar with logo',
             self::TEMPLATE_HORIZONTAL => 'Horizontal — landscape layout',
+            self::TEMPLATE_CUSTOM => 'Custom — your own HTML template',
         ];
     }
 }

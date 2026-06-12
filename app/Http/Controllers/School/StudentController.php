@@ -121,13 +121,7 @@ class StudentController extends Controller
     $school = $student->school;
     $settings = $this->idCards->settingsFor($school);
 
-    return view('school.id-cards.print', [
-      'student' => $student,
-      'school' => $school,
-      'settings' => $settings,
-      'barcodeValue' => $student->barcodeValue(),
-      'cardView' => $this->idCards->cardViewName($settings),
-    ]);
+    return view('school.id-cards.print', $this->idCards->buildCardRenderData($student, $school, $settings));
   }
 
   protected function validateStudent(Request $request, int $schoolId, ?int $studentId = null): array
