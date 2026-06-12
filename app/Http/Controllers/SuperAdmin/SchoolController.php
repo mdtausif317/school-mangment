@@ -37,7 +37,7 @@ class SchoolController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
             'admin_name' => ['required', 'string', 'max:255'],
-            'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'admin_email' => ['required', 'email', 'max:255'],
             'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
             'portal_enabled' => ['nullable', 'boolean'],
             'subscription_plan_id' => ['nullable', 'exists:subscription_plans,id'],

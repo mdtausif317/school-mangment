@@ -5,6 +5,7 @@ namespace App\Http\Controllers\School;
 use App\Http\Controllers\Controller;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Rules\UniqueSchoolUserEmail;
 use App\Services\IdCardService;
 use App\Services\StudentAccountService;
 use App\Services\StudentPhotoService;
@@ -172,13 +173,12 @@ class StudentController extends Controller
       ? Student::query()->whereKey($studentId)->value('user_id')
       : null;
 
-    $emailRules = [
-      Rule::requiredIf(fn () => $request->boolean('create_portal_login')),
-      'nullable',
-      'email',
-      'max:255',
-      Rule::unique('users', 'email')->ignore($existingUserId),
-    ];
+    $emailRules = ['nullable', 'email', 'max:255'];
+
+    if ($request->boolean('create_portal_login')) {
+      $emailRules[] = 'required';
+      $emailRules[] = UniqueSchoolUserEmail::for($schoolId, $existingUserId);
+    }
 
     return $request->validate([
       'class_id' => [

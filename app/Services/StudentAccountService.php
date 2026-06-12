@@ -81,7 +81,9 @@ class StudentAccountService
 
     protected function assertEmailAvailable(string $email, int $schoolId, ?int $ignoreUserId = null): void
     {
-        $query = User::query()->where('email', $email);
+        $query = User::query()
+            ->where('email', $email)
+            ->where('school_id', $schoolId);
 
         if ($ignoreUserId) {
             $query->where('id', '!=', $ignoreUserId);
@@ -89,7 +91,7 @@ class StudentAccountService
 
         if ($query->exists()) {
             throw ValidationException::withMessages([
-                'email' => 'This email is already used by another portal user.',
+                'email' => 'This email is already used by another user in this school.',
             ]);
         }
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\School;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\UniqueSchoolUserEmail;
 use App\Services\AccessMenuService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', UniqueSchoolUserEmail::for($school->id)],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'designation_id' => [
                 'required',
