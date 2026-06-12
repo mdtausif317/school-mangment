@@ -6,7 +6,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <p class="text-muted mb-0">School admin manages users for <strong>{{ $school->name }}</strong> only.</p>
+        <p class="text-muted mb-0">Manage staff and teachers for <strong>{{ $school->name }}</strong>. Students are managed under <strong>Students</strong>.</p>
     </div>
     @if(Route::has('school.user-add'))
         <a href="{{ route('school.user-add') }}" class="btn btn-brand btn-sm">

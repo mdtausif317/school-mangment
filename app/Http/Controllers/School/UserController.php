@@ -27,6 +27,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->forSchool($schoolId)
+            ->schoolStaff()
             ->with('designation')
             ->orderBy('name')
             ->get();
@@ -37,7 +38,10 @@ class UserController extends Controller
     public function create(): View
     {
         $school = auth()->user()->school;
-        $designations = $school->designations()->orderBy('name')->get();
+        $designations = $school->designations()
+            ->where('slug', '!=', 'student')
+            ->orderBy('name')
+            ->get();
 
         return view('school.user-add', compact('designations', 'school'));
     }
@@ -55,7 +59,7 @@ class UserController extends Controller
                 'integer',
                 Rule::exists('designations', 'id')->where('school_id', $school->id),
             ],
-            'user_type' => ['required', 'in:staff,teacher,student'],
+            'user_type' => ['required', 'in:staff,teacher'],
         ]);
 
         $designation = $school->designations()->findOrFail($validated['designation_id']);
@@ -110,6 +114,10 @@ class UserController extends Controller
     {
         if ($user->school_id !== auth()->user()->school_id) {
             abort(403);
+        }
+
+        if ($user->isStudent()) {
+            abort(404);
         }
     }
 }

@@ -50,6 +50,12 @@ class User extends Authenticatable
         return $query->where('school_id', $schoolId);
     }
 
+    /** Staff and teachers only — students are managed in the Students module. */
+    public function scopeSchoolStaff($query)
+    {
+        return $query->whereIn('user_type', [self::TYPE_STAFF, self::TYPE_TEACHER]);
+    }
+
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);

@@ -8,8 +8,8 @@
     <div class="col-lg-8">
         <div class="mb-4">
             <p class="text-muted mb-0">
-                School admin creates users here. After creating a user, open
-                <strong>Users → Manage Access</strong> to choose which pages they can use.
+                Create staff or teacher accounts here. Students are added from the <strong>Students</strong> section.
+                After creating a user, open <strong>Users → Manage Access</strong> to choose which pages they can use.
             </p>
         </div>
         <form action="{{ route('school.user-add.store') }}" method="POST" class="card border-0 shadow-sm">
@@ -51,9 +51,8 @@
                     <div class="col-md-6">
                         <label class="form-label">User Type <span class="text-danger">*</span></label>
                         <select name="user_type" class="form-select" required>
-                            <option value="staff" {{ old('user_type') === 'staff' ? 'selected' : '' }}>Staff</option>
+                            <option value="staff" {{ old('user_type', 'staff') === 'staff' ? 'selected' : '' }}>Staff</option>
                             <option value="teacher" {{ old('user_type') === 'teacher' ? 'selected' : '' }}>Teacher</option>
-                            <option value="student" {{ old('user_type') === 'student' ? 'selected' : '' }}>Student</option>
                         </select>
                     </div>
                 </div>
