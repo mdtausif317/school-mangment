@@ -40,7 +40,7 @@
     </div>
 
     <p class="text-center mt-3 small text-muted">
-        Staff or teacher? <a href="{{ route('login') }}" class="text-brand">School login</a>
+        Staff or teacher? <a href="{{ route('school.login') }}" class="text-brand">School login</a>
     </p>
 </div>
 @endsection

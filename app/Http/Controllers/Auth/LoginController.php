@@ -42,12 +42,22 @@ class LoginController extends Controller
         return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
     }
 
-    public function showLogin(): View
+    public function showLogin(): RedirectResponse
     {
-        return view('auth.login');
+        return redirect()->route('school.login');
+    }
+
+    public function showSchoolLogin(): View
+    {
+        return view('auth.school-login');
     }
 
     public function login(Request $request): RedirectResponse
+    {
+        return $this->schoolLogin($request);
+    }
+
+    public function schoolLogin(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -70,6 +80,11 @@ class LoginController extends Controller
             if (! $user->is_active || ! $user->school?->is_active) {
                 Auth::logout();
                 return back()->withErrors(['email' => 'Account or school is inactive.'])->onlyInput('email');
+            }
+
+            if (! $user->school?->portal_enabled) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'School portal is not enabled. Contact platform admin.'])->onlyInput('email');
             }
 
             $request->session()->regenerate();
@@ -137,6 +152,6 @@ class LoginController extends Controller
 
         return redirect($wasSuperAdmin
             ? route('super-admin.login')
-            : ($wasStudent ? route('student.login') : route('login')));
+            : ($wasStudent ? route('student.login') : route('school.login')));
     }
 }

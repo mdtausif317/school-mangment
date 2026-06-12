@@ -46,7 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('school.dashboard');
             }
 
-            return route('login');
+            return route('school.login');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -18,7 +18,7 @@ class CheckPageAccess
         $user = $request->user();
 
         if (! $user) {
-            return redirect()->route('login');
+            return redirect()->route('school.login');
         }
 
         if (! $this->accessMenu->userHasPageAccess($user, $slug)) {

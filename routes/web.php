@@ -42,12 +42,14 @@ Route::get('/', function () {
         }
     }
 
-    return redirect()->route('login');
+    return redirect()->route('school.login');
 });
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/school/login', [LoginController::class, 'showSchoolLogin'])->name('school.login');
+    Route::post('/school/login', [LoginController::class, 'schoolLogin']);
     Route::get('/super-admin/login', [LoginController::class, 'showSuperAdminLogin'])->name('super-admin.login');
     Route::post('/super-admin/login', [LoginController::class, 'superAdminLogin']);
     Route::get('/student/login', [LoginController::class, 'showStudentLogin'])->name('student.login');
@@ -96,13 +98,10 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
 
         Route::middleware('school_admin')->group(function () {
             Route::post('/user-add', [SchoolUserController::class, 'store'])
-                ->middleware('page_access:user-add')
                 ->name('user-add.store');
             Route::get('/users-view/{user}/access', [SchoolUserController::class, 'access'])
-                ->middleware('page_access:users-view')
                 ->name('users-view.access');
             Route::put('/users-view/{user}/access', [SchoolUserController::class, 'updateAccess'])
-                ->middleware('page_access:users-view')
                 ->name('users-view.access.update');
 
             Route::post('/designation-add', [SchoolDesignationController::class, 'store'])

@@ -45,6 +45,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function scopeForSchool($query, int $schoolId)
+    {
+        return $query->where('school_id', $schoolId);
+    }
+
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);

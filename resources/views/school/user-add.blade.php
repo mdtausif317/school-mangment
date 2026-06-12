@@ -6,6 +6,12 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-lg-8">
+        <div class="mb-4">
+            <p class="text-muted mb-0">
+                School admin creates users here. After creating a user, open
+                <strong>Users → Manage Access</strong> to choose which pages they can use.
+            </p>
+        </div>
         <form action="{{ route('school.user-add.store') }}" method="POST" class="card border-0 shadow-sm">
             @csrf
             <div class="card-body p-4">

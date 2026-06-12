@@ -19,10 +19,14 @@ class UserController extends Controller
 
     public function index(): View
     {
+        $schoolId = auth()->user()->school_id;
+
+        abort_if(! $schoolId, 403, 'No school assigned to your account.');
+
         $school = auth()->user()->school;
 
         $users = User::query()
-            ->where('school_id', $school->id)
+            ->forSchool($schoolId)
             ->with('designation')
             ->orderBy('name')
             ->get();
@@ -68,7 +72,7 @@ class UserController extends Controller
 
         return redirect()
             ->route('school.users-view')
-            ->with('success', 'User created. Access comes from their designation automatically.');
+            ->with('success', 'User created. Open Manage Access on the Users page to set their permissions.');
     }
 
     public function access(User $user): View

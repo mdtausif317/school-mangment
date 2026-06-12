@@ -12,7 +12,7 @@
             </a>
         </div>
 
-        <form action="{{ route('school.users.access.update', $user) }}" method="POST" class="card border-0 shadow-sm">
+        <form action="{{ route('school.users-view.access.update', $user) }}" method="POST" class="card border-0 shadow-sm">
             @csrf
             @method('PUT')
             <div class="card-header bg-white fw-semibold">Page Access for {{ $user->name }}</div>

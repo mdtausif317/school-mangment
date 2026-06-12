@@ -17,7 +17,7 @@ class EnsureSchoolUser
                 return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
             }
 
-            return redirect()->route('login')
+            return redirect()->route('school.login')
                 ->with('error', 'Please log in to continue.');
         }
 
@@ -32,7 +32,7 @@ class EnsureSchoolUser
         if (! $user->school?->portal_enabled) {
             auth()->logout();
 
-            return redirect()->route('login')
+            return redirect()->route('school.login')
                 ->with('error', 'School portal access is not enabled. Contact super admin.');
         }
 
