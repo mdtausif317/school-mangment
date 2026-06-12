@@ -25,20 +25,11 @@ class SchoolModuleMenuSeeder extends Seeder
         $accessMenu = app(AccessMenuService::class);
         $maxOrder = (int) PageMenu::query()->whereNull('school_id')->max('sort_order');
 
-        $students = PageMenu::query()->where('slug', 'students-view')->first();
-        $parentStudents = $students?->parent_id
-            ? PageMenu::query()->find($students->parent_id)
-            : null;
-
-        $reportsParent = $this->upsertMenu($accessMenu, $superAdmin, [
-            'title' => 'Reports',
-            'slug' => '#',
-            'route_name' => null,
-            'scope' => PageMenu::SCOPE_SCHOOL,
-            'icon' => 'fas fa-chart-bar',
-            'parent_id' => null,
-            'sort_order' => ++$maxOrder,
-        ]);
+        PageMenu::query()
+            ->where('scope', PageMenu::SCOPE_SCHOOL)
+            ->whereIn('slug', ['', '#'])
+            ->where('title', 'Reports')
+            ->delete();
 
         $attendance = $this->upsertMenu($accessMenu, $superAdmin, [
             'title' => 'Attendance',
@@ -61,12 +52,12 @@ class SchoolModuleMenuSeeder extends Seeder
         ]);
 
         $reportsHub = $this->upsertMenu($accessMenu, $superAdmin, [
-            'title' => 'Overview',
+            'title' => 'Reports',
             'slug' => 'reports',
             'route_name' => 'school.reports',
             'scope' => PageMenu::SCOPE_SCHOOL,
-            'icon' => 'fas fa-tachometer-alt',
-            'parent_id' => $reportsParent->id,
+            'icon' => 'fas fa-chart-bar',
+            'parent_id' => null,
             'sort_order' => ++$maxOrder,
         ]);
 
@@ -76,7 +67,7 @@ class SchoolModuleMenuSeeder extends Seeder
             'route_name' => 'school.reports-attendance',
             'scope' => PageMenu::SCOPE_SCHOOL,
             'icon' => 'fas fa-user-check',
-            'parent_id' => $reportsParent->id,
+            'parent_id' => $reportsHub->id,
             'sort_order' => ++$maxOrder,
         ]);
 
@@ -86,14 +77,13 @@ class SchoolModuleMenuSeeder extends Seeder
             'route_name' => 'school.reports-fees',
             'scope' => PageMenu::SCOPE_SCHOOL,
             'icon' => 'fas fa-file-invoice-dollar',
-            'parent_id' => $reportsParent->id,
+            'parent_id' => $reportsHub->id,
             'sort_order' => ++$maxOrder,
         ]);
 
         $newMenuIds = collect([
             $attendance->id,
             $fees->id,
-            $reportsParent->id,
             $reportsHub->id,
             $reportsAttendance->id,
             $reportsFees->id,

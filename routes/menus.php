@@ -15,17 +15,14 @@ Route::middleware(['auth', 'super_admin'])->prefix('super-admin')->name('super-a
 
 Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->group(function () {
     Route::middleware('school_subscription')->group(function () {
-    Route::get('/users-view', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'users-view')->middleware('page_access:users-view')->name('users-view');
     Route::get('/classes-view', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'classes-view')->middleware('page_access:classes-view')->name('classes-view');
-    Route::get('/students-view', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'students-view')->middleware('page_access:students-view')->name('students-view');
-    Route::get('/user-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'user-add')->middleware('page_access:user-add')->name('user-add');
-    Route::get('/class-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'class-add')->middleware('page_access:class-add')->name('class-add');
-    Route::get('/student-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'student-add')->middleware('page_access:student-add')->name('student-add');
-    Route::get('/reports', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'reports')->middleware('page_access:reports')->name('reports');
     Route::get('/reports-attendance', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'reports-attendance')->middleware('page_access:reports-attendance')->name('reports-attendance');
+    Route::get('/class-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'class-add')->middleware('page_access:class-add')->name('class-add');
+    Route::get('/students-view', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'students-view')->middleware('page_access:students-view')->name('students-view');
     Route::get('/reports-fees', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'reports-fees')->middleware('page_access:reports-fees')->name('reports-fees');
-    Route::get('/', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', '')->middleware('page_access:')->name('');
+    Route::get('/student-add', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'student-add')->middleware('page_access:student-add')->name('student-add');
     Route::get('/attendance-manage', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'attendance-manage')->middleware('page_access:attendance-manage')->name('attendance-manage');
     Route::get('/fees-collect', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'fees-collect')->middleware('page_access:fees-collect')->name('fees-collect');
+    Route::get('/reports', [App\Http\Controllers\School\PageController::class, 'show'])->defaults('slug', 'reports')->middleware('page_access:reports')->name('reports');
     });
 });

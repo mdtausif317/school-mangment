@@ -30,7 +30,7 @@ class PageController extends Controller
         if (isset($this->handlers[$slug])) {
             [$controller, $method] = $this->handlers[$slug];
 
-            return app($controller)->{$method}();
+            return app()->call([app($controller), $method]);
         }
 
         $view = "school.{$slug}";

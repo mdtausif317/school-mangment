@@ -123,6 +123,11 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
             ->name('fees-collect.store');
 
         Route::middleware('school_admin')->group(function () {
+            Route::get('/users-view', [SchoolUserController::class, 'index'])
+                ->name('users-view');
+            Route::get('/user-add', [SchoolUserController::class, 'create'])
+                ->name('user-add');
+
             Route::post('/user-add', [SchoolUserController::class, 'store'])
                 ->name('user-add.store');
             Route::get('/users-view/{user}/access', [SchoolUserController::class, 'access'])

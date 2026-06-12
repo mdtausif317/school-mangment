@@ -51,12 +51,12 @@ class MenuPageService
     /** Slugs with dedicated routes in routes/web.php — skip in menus.php */
     protected array $webRoutedSlugs = [
         PageMenu::SCOPE_PLATFORM => ['dashboard', 'school-view', 'menu-add', 'create-school', 'school-add', 'plans', 'payments'],
-        PageMenu::SCOPE_SCHOOL => ['dashboard'],
+        PageMenu::SCOPE_SCHOOL => ['dashboard', 'users-view', 'user-add'],
     ];
 
     public function isGroupMenu(PageMenu $menu): bool
     {
-        return $menu->slug === '#';
+        return $menu->slug === '#' || $menu->slug === '';
     }
 
     public function usesAutoPage(PageMenu $menu): bool
