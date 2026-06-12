@@ -28,7 +28,7 @@
                 <div class="mb-3">
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-control" required>
-                    <div class="form-text">Default password is usually your roll number unless changed by admin.</div>
+                    <div class="form-text">Use the same email as on the student record in your school.</div>
                 </div>
                 <div class="mb-3 form-check">
                     <input type="checkbox" name="remember" class="form-check-input" id="remember">

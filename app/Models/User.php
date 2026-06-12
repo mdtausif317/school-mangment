@@ -55,9 +55,18 @@ class User extends Authenticatable
         return $this->belongsTo(Designation::class);
     }
 
-    public function studentRecord(): \Illuminate\Database\Eloquent\Relations\HasOne
+    /** Student profile in the same school (matched by email, not user_id). */
+    public function linkedStudentProfile(): ?Student
     {
-        return $this->hasOne(Student::class);
+        if (! $this->isStudent() || ! $this->school_id || ! $this->email) {
+            return null;
+        }
+
+        return Student::query()
+            ->where('school_id', $this->school_id)
+            ->where('email', $this->email)
+            ->where('is_active', true)
+            ->first();
     }
 
     public function isSuperAdmin(): bool

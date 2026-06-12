@@ -109,9 +109,9 @@ class LoginController extends Controller
                 return back()->withErrors(['email' => 'Account or school is inactive.'])->onlyInput('email');
             }
 
-            if (! $user->studentRecord) {
+            if (! $user->linkedStudentProfile()) {
                 Auth::logout();
-                return back()->withErrors(['email' => 'Student profile not linked. Contact your school admin.'])->onlyInput('email');
+                return back()->withErrors(['email' => 'No student record in your school for this email. Contact your school admin.'])->onlyInput('email');
             }
 
             $request->session()->regenerate();

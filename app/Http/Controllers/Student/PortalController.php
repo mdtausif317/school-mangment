@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Services\IdCardService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class PortalController extends Controller
@@ -12,10 +14,21 @@ class PortalController extends Controller
         protected IdCardService $idCards
     ) {}
 
-    public function dashboard(): View
+    protected function studentProfile(): Student
+    {
+        $student = auth()->user()->linkedStudentProfile();
+
+        if (! $student) {
+            abort(403, 'No student record found for your school. Ensure your login email matches the student profile email.');
+        }
+
+        return $student;
+    }
+
+    public function dashboard(): View|RedirectResponse
     {
         $user = auth()->user();
-        $student = $user->studentRecord()->with('schoolClass')->firstOrFail();
+        $student = $this->studentProfile()->load('schoolClass');
 
         return view('student.dashboard', compact('user', 'student'));
     }
@@ -23,16 +36,15 @@ class PortalController extends Controller
     public function profile(): View
     {
         $user = auth()->user();
-        $student = $user->studentRecord()->with(['schoolClass', 'school'])->firstOrFail();
+        $student = $this->studentProfile()->load(['schoolClass', 'school']);
 
         return view('student.profile', compact('user', 'student'));
     }
 
     public function idCard(): View
     {
-        $student = auth()->user()->studentRecord()
-            ->with(['schoolClass', 'school.idCardSettings'])
-            ->firstOrFail();
+        $student = $this->studentProfile()
+            ->load(['schoolClass', 'school.idCardSettings']);
 
         $school = $student->school;
         $settings = $this->idCards->settingsFor($school);

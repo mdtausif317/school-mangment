@@ -1,6 +1,6 @@
 @php
     $user = auth()->user();
-    $student = $user->studentRecord;
+    $student = $user->linkedStudentProfile();
 @endphp
 
 <aside class="app-sidebar" id="sidebar">

@@ -22,11 +22,11 @@ class EnsureStudentUser
                 ->with('error', 'Please log in with your student account.');
         }
 
-        if (! $user->studentRecord) {
+        if (! $user->linkedStudentProfile()) {
             auth()->logout();
 
             return redirect()->route('student.login')
-                ->with('error', 'Student profile not linked. Contact your school admin.');
+                ->with('error', 'No student record found in your school for this email. Contact your school admin.');
         }
 
         if (! $user->school?->portal_enabled || ! $user->school->is_active) {
