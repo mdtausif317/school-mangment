@@ -21,6 +21,14 @@ class EnsureSchoolUser
                 ->with('error', 'Please log in to continue.');
         }
 
+        if ($user->isStudent()) {
+            if ($request->routeIs('school.subscription.expired')) {
+                return $next($request);
+            }
+
+            return redirect()->route('student.dashboard');
+        }
+
         if (! $user->school?->portal_enabled) {
             auth()->logout();
 

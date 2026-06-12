@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->belongsTo(Designation::class);
     }
 
+    public function studentRecord(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Student::class);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->user_type === self::TYPE_SUPER_ADMIN;

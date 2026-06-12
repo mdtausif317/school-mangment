@@ -10,6 +10,7 @@ use App\Http\Controllers\School\SubscriptionController as SchoolSubscriptionCont
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\MenuController;
 use App\Http\Controllers\SuperAdmin\SchoolController;
+use App\Http\Controllers\Student\PortalController as StudentPortalController;
 use App\Http\Controllers\SuperAdmin\SubscriptionPaymentController;
 use App\Http\Controllers\SuperAdmin\SubscriptionPlanController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,15 @@ Route::get('/', function () {
 
         if ($user->isSuperAdmin()) {
             return redirect()->route('super-admin.dashboard');
+        }
+
+        if ($user->isStudent()) {
+            $school = $user->school;
+            if ($school && ! app(\App\Services\SubscriptionService::class)->hasActiveSubscription($school)) {
+                return redirect()->route('school.subscription.expired');
+            }
+
+            return redirect()->route('student.dashboard');
         }
 
         if ($user->isSchoolUser()) {
@@ -40,6 +50,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
     Route::get('/super-admin/login', [LoginController::class, 'showSuperAdminLogin'])->name('super-admin.login');
     Route::post('/super-admin/login', [LoginController::class, 'superAdminLogin']);
+    Route::get('/student/login', [LoginController::class, 'showStudentLogin'])->name('student.login');
+    Route::post('/student/login', [LoginController::class, 'studentLogin']);
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
@@ -116,6 +128,12 @@ Route::middleware(['auth', 'school_user'])->prefix('school')->name('school.')->g
                 ->name('students-view.card');
         });
     });
+});
+
+Route::middleware(['auth', 'student_user'])->prefix('student')->name('student.')->group(function () {
+    Route::get('/dashboard', [StudentPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profile', [StudentPortalController::class, 'profile'])->name('profile');
+    Route::get('/id-card', [StudentPortalController::class, 'idCard'])->name('id-card');
 });
 
 require __DIR__ . '/menus.php';

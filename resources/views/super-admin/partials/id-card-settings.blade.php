@@ -1,5 +1,6 @@
 @php
     $settings = $settings ?? null;
+    $school = $school ?? null;
     $idCards = app(\App\Services\IdCardService::class);
     $show = $settings?->show_fields ?? $idCards->defaultShowFields();
     $selectedTemplate = old('id_card_template', $settings?->template ?? 'classic');
@@ -198,7 +199,7 @@
                     form.appendChild(cloneField(logo));
                 }
 
-                const schoolId = @json($school->id ?? null);
+                const schoolId = @json($school?->id);
                 if (schoolId) {
                     const input = document.createElement('input');
                     input.type = 'hidden';

@@ -62,6 +62,11 @@ class LoginController extends Controller
                 return back()->withErrors(['email' => 'Use the super admin login page.'])->onlyInput('email');
             }
 
+            if ($user->isStudent()) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Students must use the student login page.'])->onlyInput('email');
+            }
+
             if (! $user->is_active || ! $user->school?->is_active) {
                 Auth::logout();
                 return back()->withErrors(['email' => 'Account or school is inactive.'])->onlyInput('email');
@@ -79,14 +84,59 @@ class LoginController extends Controller
         return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
     }
 
+    public function showStudentLogin(): View
+    {
+        return view('auth.student-login');
+    }
+
+    public function studentLogin(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::user();
+
+            if (! $user->isStudent()) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Not a student account. Use school or staff login.'])->onlyInput('email');
+            }
+
+            if (! $user->is_active || ! $user->school?->is_active) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Account or school is inactive.'])->onlyInput('email');
+            }
+
+            if (! $user->studentRecord) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Student profile not linked. Contact your school admin.'])->onlyInput('email');
+            }
+
+            $request->session()->regenerate();
+
+            if (! $this->subscriptions->hasActiveSubscription($user->school)) {
+                return redirect()->route('school.subscription.expired');
+            }
+
+            return redirect()->route('student.dashboard');
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+    }
+
     public function logout(Request $request): RedirectResponse
     {
         $wasSuperAdmin = $request->user()?->isSuperAdmin();
+        $wasStudent = $request->user()?->isStudent();
 
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect($wasSuperAdmin ? route('super-admin.login') : route('login'));
+        return redirect($wasSuperAdmin
+            ? route('super-admin.login')
+            : ($wasStudent ? route('student.login') : route('login')));
     }
 }

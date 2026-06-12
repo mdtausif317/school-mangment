@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'school_subscription' => \App\Http\Middleware\EnsureSchoolSubscription::class,
             'page_access' => \App\Http\Middleware\CheckPageAccess::class,
             'school_admin' => \App\Http\Middleware\EnsureSchoolAdmin::class,
+            'student_user' => \App\Http\Middleware\EnsureStudentUser::class,
         ]);
 
         $middleware->redirectUsersTo(function (Request $request) {
@@ -25,6 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($user?->isSuperAdmin()) {
                 return route('super-admin.dashboard');
+            }
+
+            if ($user?->isStudent()) {
+                $school = $user->school;
+                if ($school && ! app(\App\Services\SubscriptionService::class)->hasActiveSubscription($school)) {
+                    return route('school.subscription.expired');
+                }
+
+                return route('student.dashboard');
             }
 
             if ($user?->isSchoolUser()) {

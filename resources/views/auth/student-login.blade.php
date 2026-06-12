@@ -1,13 +1,13 @@
 @extends('layouts.guest')
 
-@section('title', 'School Login')
+@section('title', 'Student Login')
 
 @section('content')
 <div class="auth-card">
     <div class="text-center mb-4">
-        <div class="auth-logo"><i class="fas fa-graduation-cap"></i></div>
-        <h4 class="mt-2">School Login</h4>
-        <p class="text-muted small">Staff, Teacher & Student</p>
+        <div class="auth-logo"><i class="fas fa-user-graduate"></i></div>
+        <h4 class="mt-2">Student Login</h4>
+        <p class="text-muted small">Access your profile &amp; ID card</p>
     </div>
 
     <div class="card shadow-sm border-0">
@@ -15,8 +15,11 @@
             @if($errors->any())
                 <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
             @endif
+            @if(session('error'))
+                <div class="alert alert-danger py-2">{{ session('error') }}</div>
+            @endif
 
-            <form method="POST" action="{{ route('login') }}">
+            <form method="POST" action="{{ route('student.login') }}">
                 @csrf
                 <div class="mb-3">
                     <label class="form-label">Email</label>
@@ -25,6 +28,7 @@
                 <div class="mb-3">
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-control" required>
+                    <div class="form-text">Default password is usually your roll number unless changed by admin.</div>
                 </div>
                 <div class="mb-3 form-check">
                     <input type="checkbox" name="remember" class="form-check-input" id="remember">
@@ -36,9 +40,7 @@
     </div>
 
     <p class="text-center mt-3 small text-muted">
-        Super Admin? <a href="{{ route('super-admin.login') }}" class="text-brand">Login here</a>
-        &nbsp;·&nbsp;
-        Student? <a href="{{ route('student.login') }}" class="text-brand">Student login</a>
+        Staff or teacher? <a href="{{ route('login') }}" class="text-brand">School login</a>
     </p>
 </div>
 @endsection
