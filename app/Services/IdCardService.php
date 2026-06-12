@@ -54,26 +54,30 @@ class IdCardService
     public function defaultCustomHtml(): string
     {
         return <<<'HTML'
-<div class="id-card mx-auto" style="width:340px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12);border:2px solid {{primary_color}};">
-    <div style="background:linear-gradient(135deg,{{primary_color}},{{secondary_color}});color:#fff;text-align:center;padding:.75rem 1rem;">
+<div class="id-card id-card-premium mx-auto" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(15,23,42,.14);position:relative;">
+    <div style="position:absolute;top:0;left:0;width:90px;height:90px;background:linear-gradient(135deg,{{primary_color}} 50%,transparent 50%);"></div>
+    <div style="position:absolute;bottom:0;right:0;width:90px;height:90px;background:linear-gradient(315deg,{{primary_color}} 55%,transparent 55%);"></div>
+    <div style="position:relative;z-index:2;text-align:center;padding:1.25rem 1rem 0;">
         {{#school_logo}}{{school_logo}}{{/school_logo}}
-        <h6 style="margin:0;font-weight:700;font-size:.95rem;">{{school_name}}</h6>
-        <small style="opacity:.9;">{{header_title}}</small>
+        <div style="font-size:1rem;font-weight:800;color:#0f172a;">{{school_name}}</div>
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:{{primary_color}};margin-top:.2rem;">{{header_title}}</div>
     </div>
-    <div style="text-align:center;padding:1rem;">
-        {{#photo}}
-        <div style="width:200px;height:250px;margin:0 auto 1rem;border:3px solid {{primary_color}};border-radius:8px;overflow:hidden;background:#f8f9fa;display:flex;align-items:center;justify-content:center;">
-            {{student_photo}}
+    {{#photo}}
+    <div style="text-align:center;margin:1rem 0;">
+        <div style="display:inline-block;padding:6px;border-radius:50%;background:linear-gradient(145deg,{{primary_color}},{{secondary_color}});">
+            <div style="width:132px;height:132px;border-radius:50%;overflow:hidden;border:3px solid #fff;background:#f1f5f9;">{{student_photo}}</div>
         </div>
-        {{/photo}}
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:.25rem;">{{student_name}}</div>
-        {{#roll_no}}<div style="font-size:.85rem;color:#4b5563;"><strong>Roll:</strong> {{roll_no}}</div>{{/roll_no}}
-        {{#class}}<div style="font-size:.85rem;color:#4b5563;"><strong>Class:</strong> {{class_name}}</div>{{/class}}
-        {{#guardian}}<div style="font-size:.85rem;color:#4b5563;"><strong>Guardian:</strong> {{guardian_name}}</div>{{/guardian}}
-        {{#phone}}<div style="font-size:.85rem;color:#4b5563;"><strong>Phone:</strong> {{phone}}</div>{{/phone}}
-        {{#barcode}}{{barcode}}{{/barcode}}
-        <div style="font-size:.8rem;color:#6b7280;margin-top:.5rem;">{{footer_text}}</div>
     </div>
+    {{/photo}}
+    <div style="text-align:center;font-size:1.35rem;font-weight:800;color:#0f172a;padding:0 1rem;">{{student_name}}</div>
+    {{#class}}<div style="text-align:center;font-size:.82rem;font-weight:600;color:{{primary_color}};margin-top:.15rem;">{{class_name}}</div>{{/class}}
+    <div style="max-width:280px;margin:1rem auto;padding:0 1rem;">
+        {{#roll_no}}<div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px dashed #e2e8f0;font-size:.82rem;"><span style="font-size:.68rem;font-weight:600;color:#64748b;text-transform:uppercase;">Roll No</span><span style="font-weight:600;color:#1e293b;">{{roll_no}}</span></div>{{/roll_no}}
+        {{#guardian}}<div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px dashed #e2e8f0;font-size:.82rem;"><span style="font-size:.68rem;font-weight:600;color:#64748b;text-transform:uppercase;">Guardian</span><span style="font-weight:600;color:#1e293b;">{{guardian_name}}</span></div>{{/guardian}}
+        {{#phone}}<div style="display:flex;justify-content:space-between;padding:.45rem 0;font-size:.82rem;"><span style="font-size:.68rem;font-weight:600;color:#64748b;text-transform:uppercase;">Phone</span><span style="font-weight:600;color:#1e293b;">{{phone}}</span></div>{{/phone}}
+    </div>
+    {{#barcode}}<div style="padding:0 1rem .5rem;">{{barcode}}</div>{{/barcode}}
+    <div style="background:linear-gradient(90deg,{{primary_color}},{{secondary_color}});color:#fff;font-size:.72rem;font-weight:600;text-align:center;padding:.55rem 1rem;">{{footer_text}}</div>
 </div>
 HTML;
     }
@@ -289,8 +293,8 @@ HTML;
             : '';
 
         $studentPhoto = $student->photoUrl()
-            ? '<img src="'.e($student->photoUrl()).'" alt="'.e($student->name).'" style="width:100%;height:100%;object-fit:cover;">'
-            : '<span class="text-muted small">No Photo</span>';
+            ? '<img src="'.e($student->photoUrl()).'" alt="'.e($student->name).'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+            : '<span style="color:#94a3b8;font-size:.75rem;">No Photo</span>';
 
         $barcode = '<div class="barcode-wrap mt-3 pt-3" style="border-top:1px dashed #dee2e6;">'
             .'<svg class="student-barcode"></svg>'

@@ -51,9 +51,9 @@ class SchoolIdCardSetting extends Model
     public static function templateOptions(): array
     {
         return [
-            self::TEMPLATE_CLASSIC => 'Classic — portrait, centered photo',
-            self::TEMPLATE_MODERN => 'Modern — color sidebar with logo',
-            self::TEMPLATE_HORIZONTAL => 'Horizontal — landscape layout',
+            self::TEMPLATE_CLASSIC => 'Premium — centered portrait photo',
+            self::TEMPLATE_MODERN => 'Modern — wave header, circle photo',
+            self::TEMPLATE_HORIZONTAL => 'Professional — landscape layout',
             self::TEMPLATE_CUSTOM => 'Custom — your own HTML template',
         ];
     }
